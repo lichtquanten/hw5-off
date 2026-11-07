@@ -1,0 +1,21 @@
+{
+	"title": "HW #5 Coding",
+	"theme": "light",
+	"scripts": [],
+	"lexikonTopic": "",
+	"suppressPageNumbering": false,
+	"useSubmitButtons": true,
+	"useMarkAsComplete": true,
+	"hideMenu": false,
+	"allowGuideClose": false,
+	"collapsedOnStart": false,
+	"hideSectionsToggle": false,
+	"hideBackToDashboard": false,
+	"protectLayout": false,
+	"order": [
+		"Github-and-Testing-Setup-995d",
+		"Wordle-630e",
+		"Schedwork-46ca",
+		"Submission-818e"
+	]
+}

@@ -1,2 +1,0 @@
-#pragma once
-#define REFERENCE_INFO R"reference({"strategy":"@REFERENCE_LABEL@","fingerprint":"@REFERENCE_FINGERPRINT@"})reference"

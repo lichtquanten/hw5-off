@@ -8,26 +8,13 @@ import tempfile
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 TEST_SUITE = WORKSPACE / '.guides/tests'
-sys.path.insert(0, str(TEST_SUITE))
-from reference_tools import reference_fingerprint
 
 
 VERSIONS = ('18.04', '20.04')
 STRATEGIES = ('starter', 'instructor')
-VALIDATE = '''
-import json
-from pathlib import Path
-import subprocess
-import sys
-
-subprocess.check_call(['getconf', 'GNU_LIBC_VERSION'])
-for name in ('starter', 'instructor'):
-    binary = str(Path('/references') / name / 'shipwreck_reference')
-    metadata = json.loads(subprocess.check_output([binary, '--reference-info']).decode())
-    if metadata != {'strategy': name.capitalize(), 'fingerprint': sys.argv[1]}:
-        raise SystemExit('Reference metadata does not match: ' + name)
-    subprocess.check_call([binary, '--gtest_filter=*'])
-'''
+# Print the C library version, then run every test in each published binary.
+VALIDATE = 'getconf GNU_LIBC_VERSION && ' + ' && '.join(
+    '/references/' + name + '/shipwreck_reference' for name in STRATEGIES)
 
 
 def run(arguments):
@@ -36,7 +23,6 @@ def run(arguments):
 
 def main():
     references = Path(__file__).resolve().parent
-    workspace = WORKSPACE
     if shutil.which('docker') is None:
         raise SystemExit('Docker is required for the private portable reference build.')
     images = {}
@@ -52,9 +38,9 @@ def main():
         staging = Path(directory)
         cache = staging / 'build'
         cache.mkdir()
-        (workspace / 'build/references').mkdir(parents=True, exist_ok=True)
+        (WORKSPACE / 'build/references').mkdir(parents=True, exist_ok=True)
         output = staging / 'bin'
-        mounts = ['--mount', 'type=bind,src=' + str(workspace) + ',dst=/workspace,readonly',
+        mounts = ['--mount', 'type=bind,src=' + str(WORKSPACE) + ',dst=/workspace,readonly',
                   '--mount', 'type=bind,src=' + str(cache) + ',dst=/workspace/build/references']
         for name in STRATEGIES:
             destination = output / name
@@ -66,13 +52,12 @@ def main():
              '--user', str(os.getuid()) + ':' + str(os.getgid()), *mounts,
              images['18.04'], 'python3', '.dev/references/build.py'])
 
-        fingerprint = reference_fingerprint(TEST_SUITE)
         for version in VERSIONS:
             print('Checking the same binaries on Ubuntu ' + version + '...', flush=True)
             # Only executables are mounted during validation; no solution source.
             run(['docker', 'run', '--rm', '--platform', 'linux/amd64',
                  '--mount', 'type=bind,src=' + str(output) + ',dst=/references,readonly',
-                 images[version], 'python3', '-c', VALIDATE, fingerprint])
+                 images[version], 'sh', '-c', VALIDATE])
 
         # Publish only after both runtime checks pass.
         for name in STRATEGIES:

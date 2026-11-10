@@ -1,18 +1,10 @@
 CXX := g++
 CXXFLAGS := -std=c++17 -g -O2 -Wall -Wextra -I src
 
+# Every .cpp file in src/ is compiled. Headers need no entry.
 SOURCES := .guides/support/main.cpp .guides/support/scenario.cpp \
-           .guides/support/simulated_robot.cpp .guides/support/simulated_mothership.cpp
-
-# BEGIN - STUDENT SOURCE FILES
-# Add new .cpp files here. Headers need no entry.
-
-SOURCES += src/search.cpp src/seafloor_survey.cpp
-
-# EXAMPLE - ADD YOUR OWN SOURCE FILE
-# SOURCES += src/robot_selector.cpp
-
-# END - STUDENT SOURCE FILES
+           .guides/support/simulated_robot.cpp .guides/support/simulated_mothership.cpp \
+           $(wildcard src/*.cpp)
 
 all:
 	mkdir -p build
@@ -24,20 +16,10 @@ run: all
 benchmark: all
 	./build/shipwreck --benchmark
 
-init-tests: .guides/tests/Makefile
-
-.guides/tests/Makefile: .guides/tests/CMakeLists.txt \
-                      .guides/tests/shipwreck_tests/CMakeLists.txt \
-                      .guides/tests/test_cmake_lib/CustomTests.cmake \
-                      .guides/tests/test_cmake_lib/GoogleTest.cmake
-	cd .guides/tests && cmake . -G "Unix Makefiles"
-
-export TEST
-
-check: .guides/tests/Makefile
+check:
 	@python3 .guides/tests/check.py
 
 clean:
 	rm -rf build
 
-.PHONY: all run benchmark init-tests check clean
+.PHONY: all run benchmark check clean

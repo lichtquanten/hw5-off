@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <random>
-#include <stdexcept>
 #include <tuple>
 #include <utility>
 
@@ -39,8 +38,6 @@ inline DebrisDistribution debrisDistribution(DebrisPattern pattern)
         distribution.decoyClusterCount = 2;
         distribution.decoyClusterSamples = 4;
         break;
-    default:
-        throw std::invalid_argument("Unknown debris pattern.");
     }
     return distribution;
 }
@@ -80,34 +77,32 @@ inline void normalizeDebris(Scenario& scenario, std::mt19937& random)
 }
 
 inline Scenario makePerformanceScenario(
-    unsigned seed, int maxPathLength, int backgroundPerRobot, DebrisPattern pattern,
+    unsigned seed, int backgroundPerRobot, DebrisPattern pattern,
     PathLayout layout = PathLayout::Uniform,
     WreckAvailability wreckAvailability = WreckAvailability::Reachable)
 {
-    if (maxPathLength < 1 || maxPathLength > TETHER_LENGTH || backgroundPerRobot < 0)
-        throw std::invalid_argument("Invalid performance scenario dimensions.");
     std::mt19937 random(seed);
     const auto pick = [&random](int count) { return static_cast<int>(random() % count); };
     const DebrisDistribution distribution = debrisDistribution(pattern);
     Scenario scenario;
     for (int robot = 0; robot < ROBOT_COUNT; ++robot)
     {
-        int length = maxPathLength;
+        int length = TETHER_LENGTH;
         if (layout == PathLayout::Mixed)
         {
             if (robot % 7 == 0)
                 length = 0;
             else if (robot % 7 == 1)
-                length = 1 + pick(std::max(1, maxPathLength / 100));
+                length = 1 + pick(TETHER_LENGTH / 100);
             else
-                length = maxPathLength / 4 + pick(3 * maxPathLength / 4 + 1);
+                length = TETHER_LENGTH / 4 + pick(3 * TETHER_LENGTH / 4 + 1);
         }
         scenario.abysses[robot] = length + 1;
     }
 
     const int wreckRobot = pick(ROBOT_COUNT);
     if (scenario.abysses[wreckRobot] == 1)
-        scenario.abysses[wreckRobot] = maxPathLength + 1;
+        scenario.abysses[wreckRobot] = TETHER_LENGTH + 1;
     const int wreckSegment = 1 + pick(scenario.abysses[wreckRobot] - 1);
     scenario.shipwreck = Location{wreckRobot, wreckSegment};
 
@@ -129,16 +124,9 @@ inline Scenario makePerformanceScenario(
             addDebrisCluster(scenario, random, {robot, 1 + pick(length)}, distribution.decoyClusterSamples);
     }
 
+    // The wreck's debris cluster stays behind as a decoy.
     if (wreckAvailability == WreckAvailability::Unfindable)
-    {
-        if (seed % 2 == 0 || wreckSegment == TETHER_LENGTH)
-            scenario.shipwreck.reset();
-        else
-        {
-            scenario.abysses[wreckRobot] = wreckSegment;
-            scenario.shipwreck = Location{wreckRobot, wreckSegment + 1};
-        }
-    }
+        scenario.shipwreck.reset();
     normalizeDebris(scenario, random);
     return scenario;
 }

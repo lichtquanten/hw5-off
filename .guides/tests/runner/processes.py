@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess
 import time
-from typing import NamedTuple, Optional, Sequence, Tuple
+from typing import NamedTuple, Optional, Sequence
 
 
 class CheckError(Exception):
@@ -10,12 +10,6 @@ class CheckError(Exception):
 
 class BuildError(CheckError):
     pass
-
-
-class TestCommand(NamedTuple):
-    name: str
-    arguments: Tuple[str, ...]
-    working_directory: Path
 
 
 class ProcessResult(NamedTuple):

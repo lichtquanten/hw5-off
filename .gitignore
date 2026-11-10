@@ -1,29 +1,9 @@
 # Build output
 /build/
 /export/
-*.o
-*.a
 
 # Python caches
 __pycache__/
 *.py[cod]
-
-# CMake-generated files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-CTestTestfile.cmake
-CTestCustom.cmake
-/.guides/tests/**/Makefile
-
-# Test runner output
-/.guides/tests/shipwreck_tests/shipwreck_tests
-/.guides/tests/shipwreck_tests/shipwreck_runtime_tests
-/.guides/tests/Testing/
-/.guides/tests/check-build.log
-/.guides/tests/check.log
-/.guides/tests/check-results.xml
-/.guides/tests/massif/
-# Legacy reference build output
-/.guides/tests/.reference-build/
-/.guides/tests/reference-results/
+.guides/tests/references/instructor/bin/
+.guides/tests/references/starter/bin/

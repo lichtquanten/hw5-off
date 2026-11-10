@@ -10,48 +10,44 @@ namespace
 constexpr unsigned SCENARIO_SEED = 155920;
 constexpr int BACKGROUND_DEBRIS_PER_ROBOT = 1000;
 
-const std::string SCENARIO_LABEL =
-    "seed=" + std::to_string(SCENARIO_SEED) + " max_path=" + std::to_string(TETHER_LENGTH);
-
 Scenario performanceScenario(
     DebrisPattern pattern, int backgroundPerRobot = BACKGROUND_DEBRIS_PER_ROBOT,
     PathLayout layout = PathLayout::Uniform,
     WreckAvailability wreckAvailability = WreckAvailability::Reachable)
 {
     return shipwreck_tests::makePerformanceScenario(
-        SCENARIO_SEED, TETHER_LENGTH, backgroundPerRobot, pattern, layout, wreckAvailability);
+        SCENARIO_SEED, backgroundPerRobot, pattern, layout, wreckAvailability);
 }
 }
 
-TEST_F(Shipwreck, LargeClusteredDebrisLong)
+TEST_F(Shipwreck, LargeClusteredDebris)
 {
-    checkSearch(performanceScenario(DebrisPattern::Clustered), SCENARIO_LABEL);
+    checkSearch(performanceScenario(DebrisPattern::Clustered));
 }
 
-TEST_F(Shipwreck, LargeMisleadingClustersLong)
+TEST_F(Shipwreck, LargeMisleadingClusters)
 {
-    checkSearch(performanceScenario(DebrisPattern::Misleading), SCENARIO_LABEL);
+    checkSearch(performanceScenario(DebrisPattern::Misleading));
 }
 
-TEST_F(Shipwreck, LargeWeakSignalLong)
+TEST_F(Shipwreck, LargeWeakSignal)
 {
-    checkSearch(performanceScenario(DebrisPattern::WeakSignal), SCENARIO_LABEL);
+    checkSearch(performanceScenario(DebrisPattern::WeakSignal));
 }
 
-TEST_F(Shipwreck, LargeSparseDebrisLong)
+TEST_F(Shipwreck, LargeSparseDebris)
 {
-    checkSearch(performanceScenario(DebrisPattern::Sparse, 2), SCENARIO_LABEL);
+    checkSearch(performanceScenario(DebrisPattern::Sparse, 2));
 }
 
-TEST_F(Shipwreck, LargeUnequalPathsLong)
+TEST_F(Shipwreck, LargeUnequalPaths)
 {
     checkSearch(performanceScenario(
-        DebrisPattern::Misleading, BACKGROUND_DEBRIS_PER_ROBOT, PathLayout::Mixed), SCENARIO_LABEL);
+        DebrisPattern::Misleading, BACKGROUND_DEBRIS_PER_ROBOT, PathLayout::Mixed));
 }
 
-TEST_F(Shipwreck, LargeUnfindableLong)
+TEST_F(Shipwreck, LargeUnfindable)
 {
     checkSearch(performanceScenario(DebrisPattern::Clustered, BACKGROUND_DEBRIS_PER_ROBOT,
-        PathLayout::Uniform, WreckAvailability::Unfindable), SCENARIO_LABEL);
+        PathLayout::Uniform, WreckAvailability::Unfindable));
 }
-

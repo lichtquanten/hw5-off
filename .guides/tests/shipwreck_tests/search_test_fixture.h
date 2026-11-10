@@ -7,7 +7,6 @@
 #include "simulated_mothership.h"
 
 #include <iostream>
-#include <string>
 
 namespace
 {
@@ -32,20 +31,15 @@ protected:
                   << " total=" << totalTicks << '\n';
     }
 
-    void checkSearch(const Scenario& scenario, const std::string& label = "")
+    void checkSearch(const Scenario& scenario)
     {
-        SCOPED_TRACE(label);
         const bool reachable = scenario.shipwreck &&
             scenario.shipwreck->segment < scenario.abysses[scenario.shipwreck->robot];
         SimulatedMothership mothership(scenario);
         Search search(mothership);
         const auto actual = search.findShipwreck();
-        const auto ticks = mothership.getElapsedTicks();
-        if (!label.empty())
-            std::cout << "[ SCENARIO ] " << label << " debris=" << scenario.debris.size()
-                      << " ticks=" << ticks << '\n';
         ++scenarioCount;
-        totalTicks += ticks;
+        totalTicks += mothership.getElapsedTicks();
         const auto discovered = mothership.getDiscoveredShipwreck();
 
         ASSERT_EQ(actual.has_value(), reachable);

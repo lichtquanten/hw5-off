@@ -16,6 +16,7 @@ class TestDefinition(NamedTuple):
         return f'[{self.number:02d}]'
 
 
+# Only tests listed here are run and graded.
 TESTS = (
     TestDefinition(1, 'NoReachablePaths', 'All Paths Blocked'),
     TestDefinition(2, 'EmptyUnequalPaths', 'Empty Unequal Paths'),
@@ -29,15 +30,14 @@ TESTS = (
     TestDefinition(10, 'FullFleetNoWreck', 'No Wreck, All Paths Open'),
     TestDefinition(11, 'IndependentSearches', 'Independent Searches'),
     TestDefinition(12, 'SeededScenarios', 'Varied Generated Scenarios'),
-    TestDefinition(13, 'LargeClusteredDebrisLong', 'Clustered Debris', is_performance=True),
-    TestDefinition(14, 'LargeMisleadingClustersLong', 'Misleading Clusters', is_performance=True),
-    TestDefinition(15, 'LargeWeakSignalLong', 'Weak Debris Signal', is_performance=True),
-    TestDefinition(16, 'LargeSparseDebrisLong', 'Sparse Debris', is_performance=True),
-    TestDefinition(17, 'LargeUnequalPathsLong', 'Unequal Path Lengths', is_performance=True),
-    TestDefinition(18, 'LargeUnfindableLong', 'No Reachable Wreck', is_performance=True),
+    TestDefinition(13, 'LargeClusteredDebris', 'Clustered Debris', is_performance=True),
+    TestDefinition(14, 'LargeMisleadingClusters', 'Misleading Clusters', is_performance=True),
+    TestDefinition(15, 'LargeWeakSignal', 'Weak Debris Signal', is_performance=True),
+    TestDefinition(16, 'LargeSparseDebris', 'Sparse Debris', is_performance=True),
+    TestDefinition(17, 'LargeUnequalPaths', 'Unequal Path Lengths', is_performance=True),
+    TestDefinition(18, 'LargeUnfindable', 'No Reachable Wreck', is_performance=True),
 )
 TESTS_BY_NUMBER = {test.number: test for test in TESTS}
-TESTS_BY_NAME = {test.full_name: test for test in TESTS}
 
 
 def resolve_test_selection(selection: str) -> Optional[TestDefinition]:

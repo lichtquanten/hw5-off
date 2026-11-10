@@ -43,7 +43,6 @@ public:
     }
 
     std::size_t size() const { return positions.size() - firstRetained; }
-    std::size_t capacity() const { return positions.capacity(); }
 
 private:
     std::vector<int> positions;

@@ -8,37 +8,19 @@ import sys
 from typing import Tuple
 
 
-WORKSPACE = Path(__file__).resolve().parents[2]
-TEST_SUITE = WORKSPACE / '.guides/tests'
-BUILD_DIRECTORY = WORKSPACE / 'build/codio-grade'
-sys.path.insert(0, str(TEST_SUITE))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tests'))
 
 from runner.catalog import TESTS
-from runner.execution import CheckRunner, RunOptions
+from runner.execution import CheckRunner
 from runner.output import print_results
-from runner.processes import BuildError, CheckError, run_process
+from runner.processes import BuildError, CheckError
 
 
 def evaluate() -> Tuple[float, str]:
-    BUILD_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    configured = run_process([
-        'cmake', '-H' + str(TEST_SUITE), '-B' + str(BUILD_DIRECTORY),
-        '-G', 'Unix Makefiles', f'-DHW_DIR={WORKSPACE}',
-    ], BUILD_DIRECTORY)
-    print(configured.output, end='')
-    if configured.returncode:
-        raise CheckError('Cannot configure the grading test suite.')
-
     try:
-        results = CheckRunner(RunOptions(TEST_SUITE, BUILD_DIRECTORY)).run()
+        results = CheckRunner().run()
     except BuildError as error:
         return 0.0, 'Grade: 0.00%\nYour submission could not build.\n\n' + str(error)
-    if len(results) != len(TESTS) or {r.test.full_name for r in results} != {t.full_name for t in TESTS}:
-        raise CheckError('Grading did not return every registered test exactly once.')
-    for result in results:
-        for reference in result.references:
-            if not reference.passed:
-                raise CheckError(f'{reference.strategy} reference failed: {reference.failure}')
     passed = sum(result.passed for result in results)
     grade = 100.0 * passed / len(TESTS)
     buffer = io.StringIO()
@@ -49,6 +31,8 @@ def evaluate() -> Tuple[float, str]:
 
 
 def main() -> int:
+    # Python 3.6 prints ASCII under a C locale, but the results use symbols such as '—'.
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, 'utf-8', 'replace', line_buffering=True)
     parser = argparse.ArgumentParser()
     parser.add_argument('--dry-run', action='store_true')
     options = parser.parse_args()

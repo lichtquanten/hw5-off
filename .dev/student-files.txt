@@ -20,7 +20,6 @@ src/search.h
 .guides/tests/CMakeLists.txt
 .guides/tests/README.md
 .guides/tests/check.py
-.guides/tests/reference_tools.py
 .guides/tests/references/instructor/bin/shipwreck_reference
 .guides/tests/references/starter/bin/shipwreck_reference
 .guides/tests/runner/__init__.py
@@ -34,5 +33,4 @@ src/search.h
 .guides/tests/shipwreck_tests/performance_scenarios.h
 .guides/tests/shipwreck_tests/performance_tests.cpp
 .guides/tests/shipwreck_tests/search_test_fixture.h
-.guides/tests/test_cmake_lib/CustomTests.cmake
-.guides/tests/test_cmake_lib/GoogleTest.cmake
+.guides/tests/GoogleTest.cmake

@@ -1,8 +1,8 @@
 CXX := g++
 CXXFLAGS := -std=c++17 -g -O2 -Wall -Wextra -I src
 
-SOURCES := .support/main.cpp .support/scenario.cpp \
-           .support/simulated_robot.cpp .support/simulated_mothership.cpp
+SOURCES := .guides/support/main.cpp .guides/support/scenario.cpp \
+           .guides/support/simulated_robot.cpp .guides/support/simulated_mothership.cpp
 
 # BEGIN - STUDENT SOURCE FILES
 # Add new .cpp files here. Headers need no entry.
@@ -24,18 +24,18 @@ run: all
 benchmark: all
 	./build/shipwreck --benchmark
 
-init-tests: hw5_tests/Makefile
+init-tests: .guides/tests/Makefile
 
-hw5_tests/Makefile:
-	cmake -S hw5_tests -B hw5_tests -G "Unix Makefiles"
+.guides/tests/Makefile:
+	cmake -S .guides/tests -B .guides/tests -G "Unix Makefiles"
 
 export TEST
 
-check: hw5_tests/Makefile
-	@python3 hw5_tests/check.py
+check: .guides/tests/Makefile
+	@python3 .guides/tests/check.py
 
 references:
-	@python3 hw5_tests/references/build.py
+	@python3 .guides/tests/references/build.py
 
 clean:
 	rm -rf build

@@ -6,8 +6,8 @@ only the Python standard library. Run the Codio autograder with
 run it without submitting a grade.
 
 ### Using the Tests
-1. Copy this directory into your `hw5` folder
-2. Open a terminal and cd into `hw5_tests`
+1. Keep this directory at `hw5/.guides/tests`, alongside `hw5/.guides/support`
+2. Open a terminal and cd into `.guides/tests`
 3. Install the Python dependencies: `sudo apt-get install python3-xmltodict`
 3. Initialize the test suite by running `cmake .`
 4. Run the tests by typing `make grade`.  To run the tests again, you only need to execute this command, not any others.

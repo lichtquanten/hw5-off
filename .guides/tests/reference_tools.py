@@ -6,12 +6,12 @@ from typing import Optional
 STRATEGIES = ('instructor', 'starter')
 SIMULATOR_FILES = (
     'src/mothership.h',
-    '.support/scenario.h',
-    '.support/scenario.cpp',
-    '.support/simulated_robot.h',
-    '.support/simulated_robot.cpp',
-    '.support/simulated_mothership.h',
-    '.support/simulated_mothership.cpp',
+    '.guides/support/scenario.h',
+    '.guides/support/scenario.cpp',
+    '.guides/support/simulated_robot.h',
+    '.guides/support/simulated_robot.cpp',
+    '.guides/support/simulated_mothership.h',
+    '.guides/support/simulated_mothership.cpp',
 )
 SCENARIO_FILES = (
     'shipwreck_tests/performance_tests.cpp',
@@ -22,9 +22,9 @@ SCENARIO_FILES = (
 
 def reference_fingerprint(test_suite: Path, assignment: Optional[Path] = None) -> str:
     test_suite = test_suite.resolve()
-    assignment = assignment.resolve() if assignment is not None else test_suite.parent
+    assignment = assignment.resolve() if assignment is not None else test_suite.parent.parent
     files = [(name, assignment / name) for name in SIMULATOR_FILES]
-    files += [('hw5_tests/' + name, test_suite / name) for name in SCENARIO_FILES]
+    files += [('.guides/tests/' + name, test_suite / name) for name in SCENARIO_FILES]
     digest = hashlib.sha256()
     for name, path in sorted(files):
         digest.update(name.encode())

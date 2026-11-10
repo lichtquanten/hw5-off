@@ -55,12 +55,12 @@ enable_testing()
 
 if(NOT DEFINED HW_DIR)
 
-	file(GLOB PARENT_DIR_CPP_FILES "${CMAKE_SOURCE_DIR}/../src/*.cpp")
+	file(GLOB PARENT_DIR_CPP_FILES "${CMAKE_SOURCE_DIR}/../../src/*.cpp")
 
 	if("${PARENT_DIR_CPP_FILES}" STREQUAL "")
-		message(FATAL_ERROR "Cannot find src/*.cpp in assignment directory.  Either move this test directory to your hw${HW_NUMBER} dir, or run CMake with the \"-DHW_DIR=<path to hw${HW_NUMBER}>\" argument to use a custom location")
+		message(FATAL_ERROR "Cannot find src/*.cpp in assignment directory.  Either place this test directory in hw${HW_NUMBER}/.guides/tests, or run CMake with the \"-DHW_DIR=<path to hw${HW_NUMBER}>\" argument to use a custom location")
 	else()
-		get_filename_component(PARENT_DIR_REALPATH "${CMAKE_SOURCE_DIR}/.." REALPATH)
+		get_filename_component(PARENT_DIR_REALPATH "${CMAKE_SOURCE_DIR}/../.." REALPATH)
 		message(STATUS "HW_DIR autoset to ${PARENT_DIR_REALPATH}")
 		set(HW_DIR ${PARENT_DIR_REALPATH} CACHE PATH "Path to hw${HW_NUMBER} assignment directory")
 	endif()

@@ -125,7 +125,7 @@ class CheckRunner:
             if line.startswith('HW_DIR:') and '=' in line:
                 path = Path(line.split('=', 1)[1])
                 return path.resolve() if path.is_absolute() else (self.options.test_suite / path).resolve()
-        return self.options.test_suite.parent
+        return self.options.test_suite.parent.parent
 
     def reference_binaries(self) -> List[ReferenceBinary]:
         expected = reference_fingerprint(self.options.test_suite, self.assignment_directory())

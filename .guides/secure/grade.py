@@ -9,7 +9,7 @@ from typing import Tuple
 
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-TEST_SUITE = WORKSPACE / 'hw5_tests'
+TEST_SUITE = WORKSPACE / '.guides/tests'
 BUILD_DIRECTORY = WORKSPACE / 'build/codio-grade'
 sys.path.insert(0, str(TEST_SUITE))
 

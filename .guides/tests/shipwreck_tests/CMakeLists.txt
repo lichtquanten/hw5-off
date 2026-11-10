@@ -2,12 +2,12 @@ set(SHIPWRECK_USER_SOURCE
     ${HW_DIR}/src/search.cpp
     ${HW_DIR}/src/seafloor_survey.cpp)
 
-include_directories(${HW_DIR}/src ${HW_DIR}/.support)
+include_directories(${HW_DIR}/src ${HW_DIR}/.guides/support)
 
 add_library(shipwreck_simulator STATIC
-    ${HW_DIR}/.support/scenario.cpp
-    ${HW_DIR}/.support/simulated_robot.cpp
-    ${HW_DIR}/.support/simulated_mothership.cpp)
+    ${HW_DIR}/.guides/support/scenario.cpp
+    ${HW_DIR}/.guides/support/simulated_robot.cpp
+    ${HW_DIR}/.guides/support/simulated_mothership.cpp)
 
 add_source_problem(NAME shipwreck
     USER_SOURCE ${SHIPWRECK_USER_SOURCE}

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.21)
 
 set(HW_NUMBER 5)
 set(IS_CHECKER FALSE)
@@ -18,6 +18,8 @@ include(Utils)
 include(Shorthand)
 include(LibraryUtils)
 include(104CompileFlags)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 include(TestTargets)
 
 # setup Valgrind
@@ -53,12 +55,12 @@ enable_testing()
 
 if(NOT DEFINED HW_DIR)
 
-	file(GLOB PARENT_DIR_CPP_FILES "${CMAKE_BINARY_DIR}/../*.h" "${CMAKE_BINARY_DIR}/../*.cpp")
+	file(GLOB PARENT_DIR_CPP_FILES "${CMAKE_SOURCE_DIR}/../src/*.cpp")
 
 	if("${PARENT_DIR_CPP_FILES}" STREQUAL "")
-		message(FATAL_ERROR "Cannot find source files in parent directory.  Either move this test directory to your hw${HW_NUMBER} dir, or run CMake with the \"-DHW_DIR=<path to hw${HW_NUMBER}>\" argument to use a custom location")
+		message(FATAL_ERROR "Cannot find src/*.cpp in assignment directory.  Either move this test directory to your hw${HW_NUMBER} dir, or run CMake with the \"-DHW_DIR=<path to hw${HW_NUMBER}>\" argument to use a custom location")
 	else()
-		get_filename_component(PARENT_DIR_REALPATH "${CMAKE_BINARY_DIR}/.." REALPATH)
+		get_filename_component(PARENT_DIR_REALPATH "${CMAKE_SOURCE_DIR}/.." REALPATH)
 		message(STATUS "HW_DIR autoset to ${PARENT_DIR_REALPATH}")
 		set(HW_DIR ${PARENT_DIR_REALPATH} CACHE PATH "Path to hw${HW_NUMBER} assignment directory")
 	endif()
@@ -77,8 +79,7 @@ add_subdirectory(testing_utils)
 
 # build actual tests
 # ----------------------------------------------------------
-add_subdirectory(wordle_tests)
-add_subdirectory(schedwork_tests)
+add_subdirectory(shipwreck_tests)
 
 if(NOT IS_CHECKER)
 	gen_grade_target()

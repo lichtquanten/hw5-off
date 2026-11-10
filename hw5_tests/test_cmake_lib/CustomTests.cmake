@@ -18,6 +18,8 @@ function(add_executable_gtests executable USE_VALGRIND MAKE_DEBUG_TARGETS)
 
     foreach(source ${SOURCES_TO_CHECK})
 
+        get_filename_component(source_path "${source}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${source_path}")
         file(READ "${source}" contents)
 
         string(REGEX MATCHALL "${gtest_test_type_regex} *\\(([A-Za-z_0-9 ,]+)\\)" found_tests "${contents}")
@@ -66,14 +68,13 @@ function(add_executable_gtests executable USE_VALGRIND MAKE_DEBUG_TARGETS)
     message(STATUS "Found ${NUM_TESTS_FOUND} GTests from ${executable}")
 endfunction()
 
-# custom test target that prints error messages on failure (for some reason it doesn't do this by default???)
-# from https://stackoverflow.com/questions/5709914/using-cmake-how-do-i-get-verbose-output-from-ctest
-add_custom_target(check 
-    COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR}          # sean for new source files and tests 
-    COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}  # force rebuild of changed source files
-    COMMAND ${CMAKE_COMMAND} -E env CTEST_OUTPUT_ON_FAILURE=1 
-        ${CMAKE_CTEST_COMMAND} -C $<CONFIG> -j 2
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+
+add_custom_target(check
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/check.py
+        --build-dir ${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    VERBATIM)
 
 # write CTest config file to  increase length of saved output for passed tests
 file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/CTestCustom.cmake CONTENT "

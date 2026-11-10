@@ -10,8 +10,7 @@ source_dir = os.path.dirname(os.path.realpath(__file__))
 RESULT_DIR = 'results/' # where test results are stored
 GRADER_CONFIG = '../grader.txt'
 RUBRIC_GENERAL = os.path.join(source_dir, 'rubric', 'general.config')
-RUBRIC_WORDLE = os.path.join(source_dir, 'rubric', 'wordle.config')
-RUBRIC_SCHEDWORK = os.path.join(source_dir, 'rubric', 'schedwork.config')
+RUBRIC_SHIPWRECK = os.path.join(source_dir, 'rubric', 'shipwreck.config')
 
 
 GRADE_REPORT_DIR = './'
@@ -25,10 +24,9 @@ HOMEWORK = cs_grading.Homework(
     logging_level=setting.LOGGING_LEVEL,
 )
 
-P3 = cs_grading.Problem(HOMEWORK, 4, 'wordle', 15)
-P4 = cs_grading.Problem(HOMEWORK, 5, 'sched', 11)
+SHIPWRECK = cs_grading.Problem(HOMEWORK, 1, 'shipwreck', 18)
 
-for problem, rubric in [(P3, RUBRIC_WORDLE), (P4, RUBRIC_SCHEDWORK)]:
+for problem, rubric in [(SHIPWRECK, RUBRIC_SHIPWRECK)]:
     problem.generate_results(
         cmake_problem.cmake_problem,
         True,
@@ -39,5 +37,5 @@ for problem, rubric in [(P3, RUBRIC_WORDLE), (P4, RUBRIC_SCHEDWORK)]:
         problem.open_result(text_editor=setting.TEXT_EDITOR)
 
 
-GRADER = cs_grading.Grader(GRADER_CONFIG, setting.LOGGING_LEVEL)
+GRADER = cs_grading.Grader(GRADER_CONFIG if os.path.isfile(GRADER_CONFIG) else None, setting.LOGGING_LEVEL)
 cs_grading.generate_grade_report(HOMEWORK, GRADER, GRADE_REPORT_DIR, overwrite=True, logging_level=setting.LOGGING_LEVEL)

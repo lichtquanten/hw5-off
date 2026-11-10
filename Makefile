@@ -24,13 +24,20 @@ run: all
 benchmark: all
 	./build/shipwreck --benchmark
 
-test:
-	mkdir -p build
-	$(CXX) $(CXXFLAGS) -I .support .support/search_tests.cpp \
-		$(filter-out .support/main.cpp,$(SOURCES)) -o build/search_tests
-	./build/search_tests
+init-tests: hw5_tests/Makefile
+
+hw5_tests/Makefile:
+	cmake -S hw5_tests -B hw5_tests -G "Unix Makefiles"
+
+export TEST
+
+check: hw5_tests/Makefile
+	@python3 hw5_tests/check.py
+
+references:
+	@python3 hw5_tests/references/build.py
 
 clean:
 	rm -rf build
 
-.PHONY: all run benchmark test clean
+.PHONY: all run benchmark init-tests check references clean

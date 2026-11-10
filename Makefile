@@ -2,18 +2,17 @@ CXX := g++
 CXXFLAGS := -std=c++17 -g -O2 -Wall -Wextra -I src
 
 SOURCES := .support/main.cpp .support/scenario.cpp \
-           .support/simulated_robot.cpp .support/simulated_mothership.cpp \
-           .support/search_driver.cpp
+           .support/simulated_robot.cpp .support/simulated_mothership.cpp
 
-# BEGIN STUDENT SOURCE FILES
+# BEGIN - STUDENT SOURCE FILES
 # Add new .cpp files here. Headers need no entry.
 
 SOURCES += src/search.cpp src/seafloor_survey.cpp
 
-# Uncomment when using the class example in src/search_stats.h and .cpp:
-# SOURCES += src/search_stats.cpp
+# EXAMPLE - ADD YOUR OWN SOURCE FILE
+# SOURCES += src/robot_selector.cpp
 
-# END STUDENT SOURCE FILES
+# END - STUDENT SOURCE FILES
 
 all:
 	mkdir -p build
@@ -27,11 +26,9 @@ benchmark: all
 
 test:
 	mkdir -p build
-	$(CXX) $(CXXFLAGS) -I .support .support/search_driver_tests.cpp \
-		.support/search_driver.cpp .support/scenario.cpp \
-		.support/simulated_robot.cpp .support/simulated_mothership.cpp \
-		-o build/search_driver_tests
-	./build/search_driver_tests
+	$(CXX) $(CXXFLAGS) -I .support .support/search_tests.cpp \
+		$(filter-out .support/main.cpp,$(SOURCES)) -o build/search_tests
+	./build/search_tests
 
 clean:
 	rm -rf build

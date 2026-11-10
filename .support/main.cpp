@@ -5,7 +5,6 @@
 #include "simulated_mothership.h"
 #include "scenario.h"
 #include "search.h"
-#include "search_driver.h"
 
 #include <chrono>
 #include <exception>
@@ -92,35 +91,10 @@ int main(int argc, char **argv)
     const Scenario scenario = benchmark ? makeBenchmarkScenario() : makeDemoScenario();
     SimulatedMothership mothership(scenario);
 
-    const auto initializationStart = std::chrono::steady_clock::now();
+    const auto searchStart = std::chrono::steady_clock::now();
     Search search(mothership);
-    const auto initializationTime = std::chrono::steady_clock::now() - initializationStart;
-
-    if (benchmark)
-    {
-      const SearchRun run = runSearch(search, mothership, DecisionCadence::EveryDrive,
-                                      1'000'000);
-      verifySearchResult(mothership, run.shipwreck);
-
-      const double initializationNs =
-          std::chrono::duration<double, std::nano>(initializationTime).count();
-      const double selectionNs = static_cast<double>(run.selectionTime.count());
-      const double recordingNs = static_cast<double>(run.recordingTime.count());
-      std::cout << "PASS: benchmark completed every reachable path.\n"
-                << "Drives: " << run.drives << '\n'
-                << "Selections: " << run.selections << '\n'
-                << std::fixed << std::setprecision(2)
-                << "Initialization (us): " << initializationNs / 1'000 << '\n'
-                << "Selection (ns/call): " << selectionNs / run.selections << '\n'
-                << "Recording (ns/call): " << recordingNs / run.drives << '\n'
-                << "Update + selection (ns/drive): "
-                << (selectionNs + recordingNs) / run.drives << '\n'
-                << "Student time including initialization (ms): "
-                << (initializationNs + selectionNs + recordingNs) / 1'000'000 << '\n';
-      return 0;
-    }
-
     const auto result = search.findShipwreck();
+    const auto searchTime = std::chrono::steady_clock::now() - searchStart;
     verifySearchResult(mothership, result);
 
     if (result)
@@ -133,7 +107,10 @@ int main(int argc, char **argv)
       std::cout << "PASS: no reachable shipwreck.\n";
     }
 
-    std::cout << "Ticks: " << mothership.getElapsedTicks() << '\n';
+    std::cout << "Ticks: " << mothership.getElapsedTicks() << '\n'
+              << std::fixed << std::setprecision(3)
+              << "Runtime including initialization (ms): "
+              << std::chrono::duration<double, std::milli>(searchTime).count() << '\n';
     return 0;
   }
   catch (const std::exception &error)

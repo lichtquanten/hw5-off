@@ -1,8 +1,6 @@
 /*
  * STUDENT CODE - EDIT THIS FILE
- * Keep the class name, required interface, and mothership reference.
- * The provided search loop uses all three methods below. The benchmark
- * calls recordDriveResult() and chooseNextRobot() after each drive.
+ * Keep the class name and required interface. You may change other code.
  */
 
 #pragma once
@@ -12,46 +10,38 @@
 #include "mothership.h"
 #include "seafloor_survey.h"
 
+/* BEGIN EXAMPLE - INCLUDE YOUR OWN HEADER FILE
+#include "robot_selector.h"
+END EXAMPLE */
+
 class Search
 {
 public:
-  /* BEGIN REQUIRED INTERFACE */
+  /* BEGIN - REQUIRED INTERFACE */
 
   explicit Search(Mothership &mothership);
 
-  // Implemented in .support/. Do not define this method yourself.
   std::optional<Location> findShipwreck();
 
-  // Return a robot that can advance; nullopt only when all paths are finished.
-  // Must work without calling findShipwreck() first.
-  std::optional<int> chooseNextRobot();
+  /* END - REQUIRED INTERFACE */
 
-  // Called after every drive, including discoveries and path limits.
-  void recordDriveResult(int robot, const DriveResult &result);
-
-  // Called after recording a result, if this robot can still advance.
-  // Return false to select again. Ignored by the benchmark.
-  bool shouldKeepDriving(int robot, const DriveResult &result);
-
-  /* END REQUIRED INTERFACE */
-
-  /* Add your own public methods here if needed. */
+  /* Add your own public members as needed. */
 
 private:
-  /* BEGIN REQUIRED MEMBER */
-
   Mothership &mothership;
-
-  /* END REQUIRED MEMBER */
-
-  /* BEGIN EXAMPLE MEMBERS */
 
   SeafloorSurvey seafloorSurvey;
 
-  /* END EXAMPLE MEMBERS */
+  /* BEGIN EXAMPLE - ADD YOUR OWN DATA MEMBER
 
-  /*
-  bool isReachable(int robot) const;
   int robotsExplored = 0;
-  */
+
+  END EXAMPLE - ADD YOUR OWN DATA MEMBER */
+
+  /* BEGIN EXAMPLE - ADD YOUR OWN MEMBER FUNCTION
+
+  bool isReachable(int robot) const;
+  RobotSelector robotSelector;
+
+  END EXAMPLE - ADD YOUR OWN MEMBER FUNCTION */
 };

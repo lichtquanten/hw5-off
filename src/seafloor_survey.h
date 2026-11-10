@@ -15,12 +15,24 @@ public:
   void recordDebris(Location location);
   int getSignalStrength(Location location) const;
 
-  /* Add your own public methods here if needed. */
+  /* Add your own public members as needed. */
 
 private:
-  /* BEGIN EXAMPLE STORAGE */
+  /* BEGIN - TOY STORAGE (CHANGE OR REPLACE ANYTHING) */
 
   std::vector<Location> debrisLocations;
 
-  /* END EXAMPLE STORAGE */
+  /* END - TOY STORAGE */
+
+  /* BEGIN EXAMPLE - ADD YOUR OWN DATA MEMBER
+
+  int discoveriesRecorded = 0;
+
+  END EXAMPLE - ADD YOUR OWN DATA MEMBER */
+
+  /* BEGIN EXAMPLE - ADD YOUR OWN MEMBER FUNCTION
+
+  bool hasDebris() const;
+
+  END EXAMPLE - ADD YOUR OWN MEMBER FUNCTION */
 };

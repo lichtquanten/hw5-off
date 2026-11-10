@@ -6,7 +6,9 @@ import subprocess
 import sys
 import tempfile
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+WORKSPACE = Path(__file__).resolve().parents[2]
+TEST_SUITE = WORKSPACE / '.guides/tests'
+sys.path.insert(0, str(TEST_SUITE))
 from reference_tools import reference_fingerprint
 
 
@@ -34,7 +36,7 @@ def run(arguments):
 
 def main():
     references = Path(__file__).resolve().parent
-    workspace = references.parents[2]
+    workspace = WORKSPACE
     if shutil.which('docker') is None:
         raise SystemExit('Docker is required for the private portable reference build.')
     images = {}
@@ -50,10 +52,10 @@ def main():
         staging = Path(directory)
         cache = staging / 'build'
         cache.mkdir()
-        (references.parent / '.reference-build').mkdir(exist_ok=True)
+        (workspace / 'build/references').mkdir(parents=True, exist_ok=True)
         output = staging / 'bin'
         mounts = ['--mount', 'type=bind,src=' + str(workspace) + ',dst=/workspace,readonly',
-                  '--mount', 'type=bind,src=' + str(cache) + ',dst=/workspace/.guides/tests/.reference-build']
+                  '--mount', 'type=bind,src=' + str(cache) + ',dst=/workspace/build/references']
         for name in STRATEGIES:
             destination = output / name
             destination.mkdir(parents=True)
@@ -62,9 +64,9 @@ def main():
         print('Building references with Ubuntu 18.04 libraries...', flush=True)
         run(['docker', 'run', '--rm', '--platform', 'linux/amd64',
              '--user', str(os.getuid()) + ':' + str(os.getgid()), *mounts,
-             images['18.04'], 'python3', '.guides/tests/references/build.py'])
+             images['18.04'], 'python3', '.dev/references/build.py'])
 
-        fingerprint = reference_fingerprint(references.parent)
+        fingerprint = reference_fingerprint(TEST_SUITE)
         for version in VERSIONS:
             print('Checking the same binaries on Ubuntu ' + version + '...', flush=True)
             # Only executables are mounted during validation; no solution source.
@@ -74,7 +76,7 @@ def main():
 
         # Publish only after both runtime checks pass.
         for name in STRATEGIES:
-            destination = references / name / 'bin/shipwreck_reference'
+            destination = TEST_SUITE / 'references' / name / 'bin/shipwreck_reference'
             with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as temporary:
                 staged = Path(temporary.name)
             try:

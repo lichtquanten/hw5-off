@@ -3,7 +3,9 @@ import shutil
 import sys
 import tempfile
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+WORKSPACE = Path(__file__).resolve().parents[2]
+TEST_SUITE = WORKSPACE / '.guides/tests'
+sys.path.insert(0, str(TEST_SUITE))
 
 from reference_tools import reference_fingerprint
 from runner.processes import CheckError, ProcessError, remove_if_exists, run_process, write_process_log
@@ -13,7 +15,7 @@ def build_reference(strategy: str, references_directory: Path, scenario_fingerpr
     source = references_directory / strategy / 'src'
     if not all((source / file).is_file() for file in ('search.h', 'search.cpp')):
         raise CheckError(f'{strategy.capitalize()} source missing: add search.h and search.cpp in {source}.')
-    build = references_directory.parent / '.reference-build' / strategy
+    build = WORKSPACE / 'build/references' / strategy
     build.mkdir(parents=True, exist_ok=True)
     log_path = build / 'build.log'
     log_path.write_text('')
@@ -35,8 +37,8 @@ def build_reference(strategy: str, references_directory: Path, scenario_fingerpr
         write_process_log(log_path, command[0], process.output)
         if process.returncode:
             raise CheckError(process.output)
-    destination = references_directory / strategy / 'bin/shipwreck_reference'
-    destination.parent.mkdir(exist_ok=True)
+    destination = TEST_SUITE / 'references' / strategy / 'bin/shipwreck_reference'
+    destination.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as temporary:
         staged = Path(temporary.name)
     try:
@@ -50,7 +52,7 @@ def build_reference(strategy: str, references_directory: Path, scenario_fingerpr
 def main() -> int:
     references_directory = Path(__file__).resolve().parent
     try:
-        scenario_fingerprint = reference_fingerprint(references_directory.parent)
+        scenario_fingerprint = reference_fingerprint(TEST_SUITE)
     except OSError as error:
         print(error, file=sys.stderr)
         return 1

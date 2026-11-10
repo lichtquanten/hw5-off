@@ -1,10 +1,8 @@
 # CS104 HW5 Test Suite
 
 The test suite supports CMake/CTest 3.10 and newer, including Codio's 3.10.2
-and the student image's 3.16.3. The Python test runner and Codio grader support
-Python 3.6.9 and newer using only the Python standard library. Run the Codio autograder with
-`python3 .guides/secure/grade.py` from the workspace root; add `--dry-run` to
-run it without submitting a grade.
+and the student image's 3.16.3. The Python test runner supports Python 3.6.9
+and newer using only the Python standard library.
 
 ### Using the Tests
 
@@ -19,20 +17,11 @@ For a different source location, configure with `-DGTEST_SOURCE_DIR=<path>`.
 From the workspace root, run `make check` to configure, build, and run all
 18 tests. Use `make check TEST=13` to run a single numbered test. Performance
 tests also run the Starter and Instructor references and measure peak memory.
-Maintainers run `make references` privately after changing the simulator or
-performance scenarios. This requires Docker, builds Linux x86-64 executables
-with Ubuntu 18.04 libraries, and verifies those same binaries on Ubuntu 18.04
-and 20.04 before replacing the published binaries. The Docker images contain
-only build tools; solution sources are mounted locally during compilation.
-Distribute the reference binaries to students; keep `references/*/src` and the
-reference build tools in the private authoring workspace. Students do not need
-the solution sources or Docker to run references inside their development container.
+The Starter and Instructor reference executables are included. Docker and
+reference solution sources are not needed to run them in the development container.
 
 From this directory, `cmake .` followed by `make check` or `make grade` runs
 the same runner. Build and test logs are saved as `check-build.log` and
 `check.log` in the build directory; `check-results.xml` contains CTest's
 dashboard XML results. Reference results and memory profiles are saved in
 `reference-results/` and `massif/`.
-
-Run runner regression checks with
-`python3 -m unittest discover -s .guides/tests/runner_tests` from the workspace root.

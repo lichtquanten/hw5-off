@@ -37,10 +37,7 @@ export TEST
 check: .guides/tests/Makefile
 	@python3 .guides/tests/check.py
 
-references:
-	@python3 .guides/tests/references/build_portable.py
-
 clean:
 	rm -rf build
 
-.PHONY: all run benchmark init-tests check references clean
+.PHONY: all run benchmark init-tests check clean

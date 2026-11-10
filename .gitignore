@@ -1,5 +1,6 @@
 # Build output
 /build/
+/dist/
 *.o
 *.a
 
@@ -23,5 +24,6 @@ CTestCustom.cmake
 /.guides/tests/check.log
 /.guides/tests/check-results.xml
 /.guides/tests/massif/
+# Legacy reference build output
 /.guides/tests/.reference-build/
 /.guides/tests/reference-results/

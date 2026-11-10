@@ -38,6 +38,7 @@ class StudentExportTests(unittest.TestCase):
                      '.guides/tests/runner/__pycache__/execution.pyc'):
             self.write(name, 'private or generated\n')
         destination = export_student(self.workspace)
+        self.assertEqual(destination, self.workspace / 'export')
         actual = {str(path.relative_to(destination))
                   for path in destination.rglob('*') if path.is_file()}
         self.assertEqual(actual, set(self.manifest.read_text().splitlines()))
@@ -79,9 +80,7 @@ class StudentExportTests(unittest.TestCase):
             export_student(self.workspace)
 
     def test_export_cannot_follow_symlinked_destination(self):
-        directory = self.workspace / 'dist'
-        directory.mkdir()
-        (directory / 'student').symlink_to(self.workspace / 'src', target_is_directory=True)
+        (self.workspace / 'export').symlink_to(self.workspace / 'src', target_is_directory=True)
         with self.assertRaisesRegex(ValueError, 'symlink'):
             export_student(self.workspace)
         self.assertTrue((self.workspace / 'src/search.cpp').is_file())

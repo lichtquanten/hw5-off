@@ -1,4 +1,4 @@
-"""Create dist/student using only the explicitly listed student deliverables."""
+"""Create export/ using only the explicitly listed student deliverables."""
 from pathlib import Path, PurePosixPath
 import shutil
 import sys
@@ -37,14 +37,12 @@ def student_files(workspace: Path):
 
 def export_student(workspace: Path) -> Path:
     files = student_files(workspace)
-    directory = workspace / 'dist'
-    destination = directory / 'student'
-    if directory.is_symlink() or destination.is_symlink():
+    destination = workspace / 'export'
+    if destination.is_symlink():
         raise ValueError('The student export directory cannot be a symlink.')
-    directory.mkdir(exist_ok=True)
     # Finish copying before replacing any previous generated export.
-    with tempfile.TemporaryDirectory(prefix='.student-', dir=str(directory)) as temporary:
-        staging = Path(temporary) / 'student'
+    with tempfile.TemporaryDirectory(prefix='.export-', dir=str(workspace)) as temporary:
+        staging = Path(temporary) / 'export'
         staging.mkdir()
         for path in files:
             target = staging / path

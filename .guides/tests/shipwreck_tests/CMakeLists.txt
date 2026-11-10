@@ -11,9 +11,9 @@ add_library(shipwreck_simulator STATIC
 target_include_directories(shipwreck_simulator PUBLIC "${HW_DIR}/src" "${HW_DIR}/.guides/support")
 
 add_executable(shipwreck_tests basic_tests.cpp)
-target_link_libraries(shipwreck_tests PRIVATE hw5_shipwreck shipwreck_simulator GTest::Main Threads::Threads)
+target_link_libraries(shipwreck_tests PRIVATE hw5_shipwreck shipwreck_simulator shipwreck_gtest_main)
 add_executable_gtests(shipwreck_tests TRUE)
 
 add_executable(shipwreck_runtime_tests performance_tests.cpp)
-target_link_libraries(shipwreck_runtime_tests PRIVATE hw5_shipwreck shipwreck_simulator GTest::Main Threads::Threads)
+target_link_libraries(shipwreck_runtime_tests PRIVATE hw5_shipwreck shipwreck_simulator shipwreck_gtest_main)
 add_executable_gtests(shipwreck_runtime_tests FALSE)

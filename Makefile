@@ -28,7 +28,8 @@ init-tests: .guides/tests/Makefile
 
 .guides/tests/Makefile: .guides/tests/CMakeLists.txt \
                       .guides/tests/shipwreck_tests/CMakeLists.txt \
-                      .guides/tests/test_cmake_lib/CustomTests.cmake
+                      .guides/tests/test_cmake_lib/CustomTests.cmake \
+                      .guides/tests/test_cmake_lib/GoogleTest.cmake
 	cd .guides/tests && cmake . -G "Unix Makefiles"
 
 export TEST
@@ -37,7 +38,7 @@ check: .guides/tests/Makefile
 	@python3 .guides/tests/check.py
 
 references:
-	@python3 .guides/tests/references/build.py
+	@python3 .guides/tests/references/build_portable.py
 
 clean:
 	rm -rf build

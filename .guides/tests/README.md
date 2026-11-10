@@ -11,11 +11,22 @@ run it without submitting a grade.
 Keep this directory at `hw5/.guides/tests`, alongside `hw5/.guides/support`.
 Install a C++17 compiler, Make, CMake, Google Test, Valgrind, and Python 3.
 No Python packages are needed.
+On Ubuntu, install Google Test with `sudo apt-get install libgtest-dev`.
+The suite builds that package's sources locally to keep headers and libraries
+consistent, even when an incompatible prebuilt Google Test library is installed.
+For a different source location, configure with `-DGTEST_SOURCE_DIR=<path>`.
 
 From the workspace root, run `make check` to configure, build, and run all
 18 tests. Use `make check TEST=13` to run a single numbered test. Performance
 tests also run the Starter and Instructor references and measure peak memory.
-Use `make references` after changing the simulator or performance scenarios.
+Maintainers run `make references` privately after changing the simulator or
+performance scenarios. This requires Docker, builds Linux x86-64 executables
+with Ubuntu 18.04 libraries, and verifies those same binaries on Ubuntu 18.04
+and 20.04 before replacing the published binaries. The Docker images contain
+only build tools; solution sources are mounted locally during compilation.
+Distribute the reference binaries to students; keep `references/*/src` and the
+reference build tools in the private authoring workspace. Students do not need
+the solution sources or Docker to run references inside their development container.
 
 From this directory, `cmake .` followed by `make check` or `make grade` runs
 the same runner. Build and test logs are saved as `check-build.log` and

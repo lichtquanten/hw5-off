@@ -26,8 +26,10 @@ benchmark: all
 
 init-tests: .guides/tests/Makefile
 
-.guides/tests/Makefile:
-	cmake -S .guides/tests -B .guides/tests -G "Unix Makefiles"
+.guides/tests/Makefile: .guides/tests/CMakeLists.txt \
+                      .guides/tests/shipwreck_tests/CMakeLists.txt \
+                      .guides/tests/test_cmake_lib/CustomTests.cmake
+	cd .guides/tests && cmake . -G "Unix Makefiles"
 
 export TEST
 

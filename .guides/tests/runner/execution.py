@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
 import re
-from typing import Dict, List, NamedTuple, Optional
+import shutil
+from typing import List, NamedTuple, Optional
 
 from reference_tools import STRATEGIES, reference_fingerprint
 
@@ -39,10 +40,7 @@ class CheckRunner:
     def run(self) -> List[TestResult]:
         self.log_path.write_text('')
         self.build_tests()
-        commands = self.discover_test_commands()
         results = self.run_student_tests()
-        for result in results:
-            result.command = commands[result.test.full_name]
         self.run_references(results)
         self.profile_memory(results)
         return results
@@ -59,62 +57,48 @@ class CheckRunner:
         if process.returncode:
             raise BuildError('Build failed:\n' + process.output)
 
-    def discover_test_commands(self) -> Dict[str, TestCommand]:
-        process = run_process(
-            ['ctest', '--show-only=json-v1'],
-            self.build_directory,
-        )
-        if process.returncode:
-            raise CheckError('Cannot discover tests:\n' + process.output)
+    def dashboard_report(self) -> Path:
+        tag_file = self.build_directory / 'Testing/TAG'
         try:
-            metadata = json.loads(process.output)
-            commands = {}
-            for test in metadata['tests']:
-                directory = next(
-                    (prop['value'] for prop in test.get('properties', [])
-                     if prop['name'] == 'WORKING_DIRECTORY'),
-                    str(self.build_directory),
-                )
-                arguments = tuple(test['command'])
-                if not arguments or not all(isinstance(argument, str) for argument in arguments):
-                    raise ValueError('Invalid test command.')
-                name = test['name']
-                if name in commands:
-                    raise ValueError(f'Duplicate test command: {name}.')
-                commands[name] = TestCommand(name, arguments, Path(directory))
-        except (KeyError, TypeError, ValueError) as error:
-            raise CheckError(f'Cannot read CTest command metadata: {error}') from error
-        unknown = commands.keys() - TESTS_BY_NAME.keys()
-        missing = TESTS_BY_NAME.keys() - commands.keys()
-        if unknown or missing:
-            raise CheckError(
-                'CTest and runner/catalog.py do not match. '
-                f'Unregistered tests: {sorted(unknown)}. Missing tests: {sorted(missing)}.'
-            )
-        return commands
+            tag = tag_file.read_text().splitlines()[0]
+        except (OSError, IndexError) as error:
+            raise CheckError('CTest did not produce a dashboard tag.') from error
+        if re.fullmatch(r'\d{8}-\d{4}', tag) is None:
+            raise CheckError('CTest produced an invalid dashboard tag.')
+        return tag_file.parent / tag / 'Test.xml'
 
     def run_student_tests(self) -> List[TestResult]:
         report = self.build_directory / 'check-results.xml'
         remove_if_exists(report)
+        # CTest can reuse a dashboard tag. Discard its previous result before
+        # running so a configuration error cannot reuse a successful report.
+        if (self.build_directory / 'Testing/TAG').exists():
+            remove_if_exists(self.dashboard_report())
         command = [
-            'ctest', '--verbose', '--output-junit', str(report),
-            '--no-tests=error', '-j', '1',
-            '--timeout', str(TEST_TIMEOUT_SECONDS),
+            'ctest', '-T', 'Test', '--verbose', '--no-compress-output',
+            '-j', '1', '--timeout', str(TEST_TIMEOUT_SECONDS),
         ]
         if self.options.selection is not None:
             command.extend(['-R', '^' + re.escape(self.options.selection.full_name) + '$'])
         print('Running tests...', flush=True)
         process = run_process(command, self.build_directory)
         write_process_log(self.log_path, '', process.output, append=False)
-        if not report.exists():
+        dashboard_report = self.dashboard_report()
+        if not dashboard_report.is_file():
             raise CheckError('CTest did not produce a result file.\n' + process.output)
-        results = read_ctest_results(report)
-        if not results:
-            message = (
-                f'No tests matched test {self.options.selection.number}.'
-                if self.options.selection else 'No tests were found.'
+        shutil.copyfile(dashboard_report, report)
+        results = read_ctest_results(report, self.build_directory)
+        expected = (
+            {self.options.selection.full_name} if self.options.selection
+            else set(TESTS_BY_NAME)
+        )
+        actual = {result.test.full_name for result in results}
+        if actual != expected:
+            raise CheckError(
+                'CTest and runner/catalog.py do not match. '
+                f'Unexpected tests: {sorted(actual - expected)}. '
+                f'Missing tests: {sorted(expected - actual)}.'
             )
-            raise CheckError(message)
         if process.returncode and all(result.passed for result in results):
             raise CheckError('CTest failed:\n' + process.output)
         return results

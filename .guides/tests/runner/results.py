@@ -1,6 +1,7 @@
 import math
 from pathlib import Path
 import re
+import shlex
 from typing import List, Optional
 import xml.etree.ElementTree as ET
 
@@ -67,18 +68,32 @@ def parse_test_result(
     output: Optional[str] = None,
     runtime_seconds: Optional[float] = None,
 ) -> TestResult:
-    output = element.findtext('system-out', '') if output is None else output
-    failures = [
-        child.text or child.get('message', '')
-        for tag in ('failure', 'error', 'skipped')
-        for child in element.findall(tag)
-    ]
-    passed = element.get('status') in ('run', 'passed') and not failures
+    if element.tag == 'Test':
+        output = element.findtext('Results/Measurement/Value', '')
+        passed = element.get('Status') == 'passed'
+        measurements = {
+            child.get('name'): child.findtext('Value', '')
+            for child in element.findall('Results/NamedMeasurement')
+        }
+        failures = [] if passed else [
+            measurements.get('Exit Code') or measurements.get('Completion Status')
+            or element.get('Status', 'Unknown test status.')
+        ]
+        time_value = measurements.get('Execution Time')
+    else:
+        output = element.findtext('system-out', '') if output is None else output
+        failures = [
+            child.text or child.get('message', '')
+            for tag in ('failure', 'error', 'skipped')
+            for child in element.findall(tag)
+        ]
+        passed = element.get('status') in ('run', 'passed') and not failures
+        time_value = element.get('time')
     tick_match = TICK_MEASUREMENT.search(output)
     path_match = PATH_MEASUREMENT.search(output)
-    if runtime_seconds is None and element.get('time') is not None:
+    if runtime_seconds is None and time_value is not None:
         try:
-            runtime_seconds = float(element.get('time'))
+            runtime_seconds = float(time_value)
         except ValueError as error:
             raise CheckError(f'Invalid runtime for {test.full_name}.') from error
     if runtime_seconds is not None and (not math.isfinite(runtime_seconds) or runtime_seconds < 0):
@@ -103,17 +118,27 @@ def parse_test_result(
     return result
 
 
-def read_ctest_results(path: Path) -> List[TestResult]:
+def read_ctest_results(path: Path, build_directory: Path) -> List[TestResult]:
     results = []
     seen = set()
-    for element in read_xml(path).findall('.//testcase'):
-        name = element.get('name', '')
+    for element in read_xml(path).findall('./Testing/Test'):
+        name = element.findtext('Name', '')
         if name not in TESTS_BY_NAME:
             raise CheckError(f'No test ID registered for {name}. Update runner/catalog.py.')
         if name in seen:
             raise CheckError(f'Duplicate test result for {name}.')
         seen.add(name)
-        results.append(parse_test_result(element, TESTS_BY_NAME[name]))
+        result = parse_test_result(element, TESTS_BY_NAME[name])
+        try:
+            arguments = tuple(shlex.split(element.findtext('FullCommandLine', '')))
+        except ValueError as error:
+            raise CheckError(f'Invalid CTest command for {name}: {error}') from error
+        if arguments:
+            directory = (build_directory / element.findtext('Path', '.')).resolve()
+            result.command = TestCommand(name, arguments, directory)
+        elif result.passed:
+            raise CheckError(f'CTest produced no command for {name}.')
+        results.append(result)
     return sorted(results, key=lambda result: result.test.number)
 
 

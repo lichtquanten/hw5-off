@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.10)
 project(ShipwreckReferences LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -18,7 +18,7 @@ set(REFERENCE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/${REFERENCE}/src")
 if(NOT EXISTS "${REFERENCE_SRC}/search.h" OR NOT EXISTS "${REFERENCE_SRC}/search.cpp")
     message(FATAL_ERROR "Missing ${REFERENCE} src/search.h or src/search.cpp")
 endif()
-file(GLOB_RECURSE REFERENCE_SOURCES CONFIGURE_DEPENDS "${REFERENCE_SRC}/*.cpp")
+file(GLOB_RECURSE REFERENCE_SOURCES "${REFERENCE_SRC}/*.cpp")
 configure_file(reference_info.h.in reference_info.h @ONLY)
 
 add_library(reference_solution STATIC ${REFERENCE_SOURCES})
@@ -32,7 +32,7 @@ target_include_directories(reference_simulator PUBLIC "${HW_DIR}/src" "${HW_DIR}
 function(reference_binary target source)
     add_executable(${target} "${source}" reference_main.cpp)
     target_include_directories(${target} PRIVATE "${REFERENCE_SRC}" "${CMAKE_CURRENT_BINARY_DIR}")
-    target_link_libraries(${target} PRIVATE reference_solution reference_simulator GTest::gtest Threads::Threads)
+    target_link_libraries(${target} PRIVATE reference_solution reference_simulator GTest::GTest Threads::Threads)
 endfunction()
 reference_binary(shipwreck_reference "${HW_DIR}/.guides/tests/shipwreck_tests/performance_tests.cpp")
 reference_binary(reference_checks "${HW_DIR}/.guides/tests/shipwreck_tests/basic_tests.cpp")

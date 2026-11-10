@@ -22,9 +22,9 @@ from runner.processes import BuildError, CheckError, run_process
 def evaluate() -> Tuple[float, str]:
     BUILD_DIRECTORY.mkdir(parents=True, exist_ok=True)
     configured = run_process([
-        'cmake', '-S', str(TEST_SUITE), '-B', str(BUILD_DIRECTORY),
+        'cmake', '-H' + str(TEST_SUITE), '-B' + str(BUILD_DIRECTORY),
         '-G', 'Unix Makefiles', f'-DHW_DIR={WORKSPACE}',
-    ])
+    ], BUILD_DIRECTORY)
     print(configured.output, end='')
     if configured.returncode:
         raise CheckError('Cannot configure the grading test suite.')

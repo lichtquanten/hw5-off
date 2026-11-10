@@ -19,7 +19,7 @@ def build_reference(strategy: str, references_directory: Path, scenario_fingerpr
     log_path.write_text('')
     commands = (
         [
-            'cmake', '-S', str(references_directory), '-B', str(build),
+            'cmake', '-H' + str(references_directory), '-B' + str(build),
             f'-DREFERENCE={strategy}', f'-DREFERENCE_LABEL={strategy.capitalize()}',
             f'-DREFERENCE_FINGERPRINT={scenario_fingerprint}',
         ],
@@ -28,7 +28,7 @@ def build_reference(strategy: str, references_directory: Path, scenario_fingerpr
     )
     for command in commands:
         try:
-            process = run_process(command)
+            process = run_process(command, build)
         except ProcessError as error:
             write_process_log(log_path, command[0], error.output)
             raise CheckError(str(error) + '\n' + error.output) from error

@@ -6,13 +6,10 @@
 #include "scenario.h"
 #include "search.h"
 
-#include <chrono>
 #include <exception>
-#include <iomanip>
 #include <iostream>
 #include <optional>
 #include <stdexcept>
-#include <string>
 
 namespace
 {
@@ -31,20 +28,6 @@ namespace
     };
     scenario.shipwreck = Location{0, 300};
 
-    return scenario;
-  }
-
-  Scenario makeBenchmarkScenario()
-  {
-    Scenario scenario;
-    scenario.abysses.fill(30'001);
-    for (int robot = 0; robot < ROBOT_COUNT; ++robot)
-    {
-      for (int segment = 50; segment < 30'000; segment += 100)
-      {
-        scenario.debris.push_back({robot, segment});
-      }
-    }
     return scenario;
   }
 
@@ -79,22 +62,15 @@ namespace
 
 }
 
-int main(int argc, char **argv)
+int main()
 {
   try
   {
-    const bool benchmark = argc == 2 && std::string(argv[1]) == "--benchmark";
-    if (argc > 1 && !benchmark)
-    {
-      throw std::invalid_argument("Usage: shipwreck [--benchmark]");
-    }
-    const Scenario scenario = benchmark ? makeBenchmarkScenario() : makeDemoScenario();
+    const Scenario scenario = makeDemoScenario();
     SimulatedMothership mothership(scenario);
 
-    const auto searchStart = std::chrono::steady_clock::now();
     Search search(mothership);
     const auto result = search.findShipwreck();
-    const auto searchTime = std::chrono::steady_clock::now() - searchStart;
     verifySearchResult(mothership, result);
 
     if (result)
@@ -107,10 +83,6 @@ int main(int argc, char **argv)
       std::cout << "PASS: no reachable shipwreck.\n";
     }
 
-    std::cout << "Ticks: " << mothership.getElapsedTicks() << '\n'
-              << std::fixed << std::setprecision(3)
-              << "Runtime including initialization (ms): "
-              << std::chrono::duration<double, std::milli>(searchTime).count() << '\n';
     return 0;
   }
   catch (const std::exception &error)

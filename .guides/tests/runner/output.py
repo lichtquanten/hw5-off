@@ -85,7 +85,7 @@ def print_failures(results: List[TestResult], style: TerminalStyle) -> None:
 
 def print_results(results: List[TestResult]) -> None:
     style = TerminalStyle.detect()
-    print('\nTo run one test, run >make check TEST=<number>')
+    print('\nTo run one test, run >make test TEST=<number>')
     print_basic_tests([result for result in results if not result.test.is_performance], style)
     print_performance_tests([result for result in results if result.test.is_performance], style)
     print_failures(results, style)

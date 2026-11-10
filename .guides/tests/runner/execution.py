@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 from typing import List, Optional
 
@@ -47,7 +48,7 @@ class CheckRunner:
         ])
         if configure.returncode:
             raise CheckError('Cannot configure the tests:\n' + configure.output)
-        build = run_process(['cmake', '--build', str(BUILD_DIRECTORY)])
+        build = run_process(['cmake', '--build', str(BUILD_DIRECTORY), '--', '-j2'])
         log = BUILD_DIRECTORY / 'check-build.log'
         write_process_log(log, '', configure.output + build.output, append=False)
         if build.returncode:
@@ -105,11 +106,30 @@ class CheckRunner:
             '--gtest_filter=' + result.test.full_name,
         ]
         try:
+            # References are fixed; student memory is measured on every run.
+            cache = report.with_suffix('.sha256')
+            cache_key = None
+            if result.strategy != 'Yours':
+                executable = self.performance_tests[result.strategy]
+                cache_key = hashlib.sha256(
+                    executable.read_bytes() + '\0'.join(command).encode('utf-8')
+                ).hexdigest()
+                try:
+                    if cache.read_text() == cache_key:
+                        result.peak_memory_bytes = read_peak_memory(report)
+                        write_process_log(self.log_path, heading, 'Using saved reference memory profile.\n')
+                        return
+                except (CheckError, OSError):
+                    pass
+                # Failed or interrupted profiling must not leave a reusable key.
+                remove_if_exists(cache)
             remove_if_exists(report)
             process = run_process(command, BUILD_DIRECTORY, PROFILE_TIMEOUT_SECONDS)
             write_process_log(self.log_path, heading, process.output)
             if process.returncode:
                 raise CheckError(f'Massif exited with status {process.returncode}.')
             result.peak_memory_bytes = read_peak_memory(report)
+            if cache_key is not None:
+                cache.write_text(cache_key)
         except (CheckError, OSError) as error:
             write_process_log(self.log_path, heading, str(error))

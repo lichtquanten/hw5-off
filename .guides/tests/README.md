@@ -14,10 +14,17 @@ The suite builds that package's sources locally to keep headers and libraries
 consistent, even when an incompatible prebuilt Google Test library is installed.
 For a different source location, configure with `-DGTEST_SOURCE_DIR=<path>`.
 
-From the workspace root, run `make check` to configure, build, and run all
-tests. Use `make check TEST=13` to run a single numbered test. Performance
+From the workspace root, run `make smoke-test` to compile and validate one demo
+scenario without profiling. Run `make test` to configure, build, and run all
+tests. Use `make test TEST=13` to run a single numbered test. Performance
 tests also run the included Starter and Instructor reference executables and
 measure peak memory. Every `.cpp` file in `src/` is compiled.
 
+The test build uses two compiler jobs. Reference memory profiles are reused
+after the first successful measurement and regenerated when the reference
+executable or profiling command changes. Reference runtimes and all student
+measurements are run every time.
+
 The tests build in `build/tests`, where `check-build.log`, `check.log`, and the
-memory profiles in `massif/` are saved. `make clean` removes all build output.
+memory profiles in `massif/` are saved. `make clean` removes all build output,
+including saved reference profiles.

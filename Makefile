@@ -10,16 +10,13 @@ all:
 	mkdir -p build
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o build/shipwreck
 
-run: all
+smoke-test: all
 	./build/shipwreck
 
-benchmark: all
-	./build/shipwreck --benchmark
-
-check:
+test:
 	@python3 .guides/tests/check.py
 
 clean:
 	rm -rf build
 
-.PHONY: all run benchmark check clean
+.PHONY: all smoke-test test clean

@@ -1,14 +1,14 @@
-from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
-from typing import Optional
+from typing import Dict, List, NamedTuple, Optional
 
 from reference_tools import STRATEGIES, reference_fingerprint
 
 from .catalog import TESTS_BY_NAME, TestDefinition
 from .processes import (
-    BuildError, CheckError, ProcessError, TestCommand, run_process, write_process_log,
+    BuildError, CheckError, ProcessError, TestCommand, remove_if_exists,
+    run_process, write_process_log,
 )
 from .results import TestResult, read_ctest_results, read_peak_memory, read_reference_result
 
@@ -17,15 +17,13 @@ TEST_TIMEOUT_SECONDS = 30
 PROFILE_TIMEOUT_SECONDS = 300
 
 
-@dataclass(frozen=True)
-class RunOptions:
+class RunOptions(NamedTuple):
     test_suite: Path
     build_directory: Path
     selection: Optional[TestDefinition] = None
 
 
-@dataclass(frozen=True)
-class ReferenceBinary:
+class ReferenceBinary(NamedTuple):
     strategy: str
     path: Path
     error: str = ''
@@ -38,7 +36,7 @@ class CheckRunner:
         self.references_directory = options.test_suite / 'references'
         self.log_path = self.build_directory / 'check.log'
 
-    def run(self) -> list[TestResult]:
+    def run(self) -> List[TestResult]:
         self.log_path.write_text('')
         self.build_tests()
         commands = self.discover_test_commands()
@@ -61,7 +59,7 @@ class CheckRunner:
         if process.returncode:
             raise BuildError('Build failed:\n' + process.output)
 
-    def discover_test_commands(self) -> dict[str, TestCommand]:
+    def discover_test_commands(self) -> Dict[str, TestCommand]:
         process = run_process(
             ['ctest', '--show-only=json-v1'],
             self.build_directory,
@@ -95,9 +93,9 @@ class CheckRunner:
             )
         return commands
 
-    def run_student_tests(self) -> list[TestResult]:
+    def run_student_tests(self) -> List[TestResult]:
         report = self.build_directory / 'check-results.xml'
-        report.unlink(missing_ok=True)
+        remove_if_exists(report)
         command = [
             'ctest', '--verbose', '--output-junit', str(report),
             '--no-tests=error', '-j', '1',
@@ -129,7 +127,7 @@ class CheckRunner:
                 return path.resolve() if path.is_absolute() else (self.options.test_suite / path).resolve()
         return self.options.test_suite.parent
 
-    def reference_binaries(self) -> list[ReferenceBinary]:
+    def reference_binaries(self) -> List[ReferenceBinary]:
         expected = reference_fingerprint(self.options.test_suite, self.assignment_directory())
         references = []
         for name in STRATEGIES:
@@ -151,7 +149,7 @@ class CheckRunner:
             references.append(ReferenceBinary(name.capitalize(), binary, error_message))
         return references
 
-    def run_references(self, results: list[TestResult]) -> None:
+    def run_references(self, results: List[TestResult]) -> None:
         targets = [result for result in results if result.test.is_performance]
         if not targets:
             return
@@ -176,7 +174,7 @@ class CheckRunner:
         )
         heading = f'{reference.strategy}: {student.test.full_name}'
         try:
-            report.unlink(missing_ok=True)
+            remove_if_exists(report)
             process = run_process(
                 [*command.arguments, '--gtest_output=xml:' + str(report)],
                 command.working_directory, TEST_TIMEOUT_SECONDS,
@@ -194,7 +192,7 @@ class CheckRunner:
             write_process_log(self.log_path, heading, output + '\n' + str(error))
             return TestResult(student.test, reference.strategy, passed=False, output=output, failure=str(error))
 
-    def profile_memory(self, results: list[TestResult]) -> None:
+    def profile_memory(self, results: List[TestResult]) -> None:
         targets = [
             measurement
             for result in results if result.test.is_performance
@@ -214,7 +212,7 @@ class CheckRunner:
         try:
             if result.command is None:
                 raise CheckError('No native command is available for memory profiling.')
-            report.unlink(missing_ok=True)
+            remove_if_exists(report)
             command = [
                 'valgrind', '--tool=massif', '--time-unit=B',
                 '--peak-inaccuracy=0', '--massif-out-file=' + str(report),

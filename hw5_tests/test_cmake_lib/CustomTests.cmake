@@ -68,7 +68,7 @@ function(add_executable_gtests executable USE_VALGRIND MAKE_DEBUG_TARGETS)
     message(STATUS "Found ${NUM_TESTS_FOUND} GTests from ${executable}")
 endfunction()
 
-find_package(Python3 3.9 COMPONENTS Interpreter REQUIRED)
+find_package(Python3 3.6.9 COMPONENTS Interpreter REQUIRED)
 
 add_custom_target(check
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/check.py

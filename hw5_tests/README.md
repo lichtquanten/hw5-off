@@ -1,5 +1,10 @@
 # CS104 HW5 Test Suite
 
+The Python test runner and Codio grader support Python 3.6.9 and newer using
+only the Python standard library. Run the Codio autograder with
+`python3 .guides/secure/grade.py` from the workspace root; add `--dry-run` to
+run it without submitting a grade.
+
 ### Using the Tests
 1. Copy this directory into your `hw5` folder
 2. Open a terminal and cd into `hw5_tests`

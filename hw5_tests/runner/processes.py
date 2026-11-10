@@ -1,8 +1,7 @@
-from dataclasses import dataclass
 from pathlib import Path
 import subprocess
 import time
-from typing import Optional, Sequence
+from typing import NamedTuple, Optional, Sequence, Tuple
 
 
 class CheckError(Exception):
@@ -13,15 +12,13 @@ class BuildError(CheckError):
     pass
 
 
-@dataclass(frozen=True)
-class TestCommand:
+class TestCommand(NamedTuple):
     name: str
-    arguments: tuple[str, ...]
+    arguments: Tuple[str, ...]
     working_directory: Path
 
 
-@dataclass(frozen=True)
-class ProcessResult:
+class ProcessResult(NamedTuple):
     returncode: int
     output: str
     elapsed_seconds: float
@@ -45,7 +42,7 @@ def run_process(
             cwd=working_directory,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
+            universal_newlines=True,
             errors='replace',
             timeout=timeout,
         )
@@ -57,6 +54,13 @@ def run_process(
     except OSError as error:
         raise ProcessError(f'Cannot run {arguments[0]}: {error}') from error
     return ProcessResult(process.returncode, process.stdout, time.perf_counter() - started)
+
+
+def remove_if_exists(path: Path) -> None:
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def write_process_log(path: Path, heading: str, output: str, append: bool = True) -> None:

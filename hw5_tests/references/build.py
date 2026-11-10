@@ -6,7 +6,7 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from reference_tools import reference_fingerprint
-from runner.processes import CheckError, ProcessError, run_process, write_process_log
+from runner.processes import CheckError, ProcessError, remove_if_exists, run_process, write_process_log
 
 
 def build_reference(strategy: str, references_directory: Path, scenario_fingerprint: str) -> None:
@@ -43,7 +43,7 @@ def build_reference(strategy: str, references_directory: Path, scenario_fingerpr
         shutil.copy2(build / 'shipwreck_reference', staged)
         staged.replace(destination)
     finally:
-        staged.unlink(missing_ok=True)
+        remove_if_exists(staged)
     print(f'Built {destination}')
 
 

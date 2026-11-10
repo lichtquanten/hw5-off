@@ -1,8 +1,7 @@
-from dataclasses import dataclass, field
 import math
 from pathlib import Path
 import re
-from typing import Optional
+from typing import List, Optional
 import xml.etree.ElementTree as ET
 
 from .catalog import TESTS_BY_NAME, TestDefinition
@@ -16,19 +15,32 @@ MEMCHECK_LINES = re.compile(r'^==\d+==.*(?:\n|$)', re.MULTILINE)
 HEAP_MEASUREMENT = re.compile(r'^mem_heap_B=(\d+)$', re.MULTILINE)
 
 
-@dataclass
 class TestResult:
-    test: TestDefinition
-    strategy: str
-    passed: bool
-    ticks: Optional[int] = None
-    runtime_seconds: Optional[float] = None
-    peak_memory_bytes: Optional[int] = None
-    path_limit: Optional[int] = None
-    output: str = ''
-    failure: str = ''
-    command: Optional[TestCommand] = None
-    references: list['TestResult'] = field(default_factory=list)
+    def __init__(
+        self,
+        test: TestDefinition,
+        strategy: str,
+        passed: bool,
+        ticks: Optional[int] = None,
+        runtime_seconds: Optional[float] = None,
+        peak_memory_bytes: Optional[int] = None,
+        path_limit: Optional[int] = None,
+        output: str = '',
+        failure: str = '',
+        command: Optional[TestCommand] = None,
+        references: Optional[List['TestResult']] = None,
+    ):
+        self.test = test
+        self.strategy = strategy
+        self.passed = passed
+        self.ticks = ticks
+        self.runtime_seconds = runtime_seconds
+        self.peak_memory_bytes = peak_memory_bytes
+        self.path_limit = path_limit
+        self.output = output
+        self.failure = failure
+        self.command = command
+        self.references = [] if references is None else references
 
     @property
     def scenario_passed(self) -> bool:
@@ -91,7 +103,7 @@ def parse_test_result(
     return result
 
 
-def read_ctest_results(path: Path) -> list[TestResult]:
+def read_ctest_results(path: Path) -> List[TestResult]:
     results = []
     seen = set()
     for element in read_xml(path).findall('.//testcase'):

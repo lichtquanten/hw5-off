@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+
 import argparse
 from contextlib import redirect_stdout
 import io
 from pathlib import Path
 import sys
+from typing import Tuple
 
 
 WORKSPACE = Path(__file__).resolve().parents[2]
@@ -16,7 +19,7 @@ from runner.output import print_results
 from runner.processes import BuildError, CheckError, run_process
 
 
-def evaluate() -> tuple[float, str]:
+def evaluate() -> Tuple[float, str]:
     BUILD_DIRECTORY.mkdir(parents=True, exist_ok=True)
     configured = run_process([
         'cmake', '-S', str(TEST_SUITE), '-B', str(BUILD_DIRECTORY),

@@ -1,9 +1,7 @@
-from dataclasses import dataclass
-from typing import Optional
+from typing import NamedTuple, Optional
 
 
-@dataclass(frozen=True)
-class TestDefinition:
+class TestDefinition(NamedTuple):
     number: int
     name: str
     title: str

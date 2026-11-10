@@ -1,12 +1,10 @@
-from dataclasses import dataclass
 import sys
-from typing import Optional
+from typing import List, NamedTuple, Optional, Tuple
 
 from .results import TestResult, measurement_ratio
 
 
-@dataclass(frozen=True)
-class TerminalStyle:
+class TerminalStyle(NamedTuple):
     success: str = ''
     failure: str = ''
     heading: str = ''
@@ -21,7 +19,7 @@ class TerminalStyle:
         return f'{self.success}PASS{self.reset}' if passed else f'{self.failure}FAIL{self.reset}'
 
 
-def format_scaled(value: Optional[int], base: int, units: tuple[str, ...], separator: str) -> str:
+def format_scaled(value: Optional[int], base: int, units: Tuple[str, ...], separator: str) -> str:
     if value is None:
         return '—'
     index, divisor = 0, 1
@@ -62,7 +60,7 @@ def performance_title(result: TestResult) -> str:
     return f'{result.test.title} (≤ {format_count(path_limit)} segm./robot)'
 
 
-def print_basic_tests(results: list[TestResult], style: TerminalStyle) -> None:
+def print_basic_tests(results: List[TestResult], style: TerminalStyle) -> None:
     if not results:
         return
     width = max(len(result.test.title) for result in results)
@@ -88,7 +86,7 @@ def print_comparison(yours: TestResult) -> None:
     print('\nYours vs Instructor: ' + ' · '.join(comparisons))
 
 
-def print_performance_tests(results: list[TestResult], style: TerminalStyle) -> None:
+def print_performance_tests(results: List[TestResult], style: TerminalStyle) -> None:
     if not results:
         return
     print('\n' + style.heading + 'Performance Tests' + style.reset)
@@ -105,7 +103,7 @@ def print_performance_tests(results: list[TestResult], style: TerminalStyle) -> 
         print_comparison(result)
 
 
-def print_failures(results: list[TestResult], style: TerminalStyle) -> None:
+def print_failures(results: List[TestResult], style: TerminalStyle) -> None:
     for result in results:
         for measurement in [result, *result.references]:
             if not measurement.passed:
@@ -115,7 +113,7 @@ def print_failures(results: list[TestResult], style: TerminalStyle) -> None:
                 print(measurement.output)
 
 
-def print_results(results: list[TestResult]) -> None:
+def print_results(results: List[TestResult]) -> None:
     style = TerminalStyle.detect()
     print('\nTo run one test, run >make check TEST=<number>')
     print_basic_tests([result for result in results if not result.test.is_performance], style)

@@ -1,5 +1,5 @@
 /*
- * OPTIONAL HELPER - EDIT OR REPLACE
+ * OPTIONAL HELPER - EDIT, REPLACE, OR DELETE
  */
 
 #pragma once
@@ -14,16 +14,10 @@ public:
   void recordDebris(Location location);
   int getSignalStrength(Location location) const;
 
-  /* Add your own public members as needed. */
+  // bool hasDebris() const; // EXAMPLE
 
 private:
-  /* BEGIN - TOY STORAGE (CHANGE OR REPLACE) */
+  std::vector<Location> debrisLocations; // TOY APPROACH
 
-  std::vector<Location> debrisLocations;
-
-  /* END - TOY STORAGE */
-
-  // int discoveriesRecorded = 0; // EXAMPLE - DATA MEMBER
-
-  // bool hasDebris() const; // EXAMPLE - MEMBER FUNCTION
+  // int discoveriesRecorded = 0; // EXAMPLE
 };

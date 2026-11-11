@@ -1,8 +1,17 @@
 #pragma once
 #include "../.guides/support/trees.h"
 
-// Available containers:
-//   AVLSet<int> positions;
-//   SplaySet<int> visited;
-//   AVLMap<int, double> scores;
-//   SplayMap<int, double> signals;
+/* Include this header file and use any of:
+
+    - AVLSet<Type>
+    - SplaySet<Type>
+
+    - AVLMap<KeyType, ValueType>
+    - SplayMap<KeyType, ValueType>
+*/
+
+//   AVLSet<int> visited; // EXAMPLE
+//   SplaySet<int> visited; // EXAMPLE
+
+//   AVLMap<std::string, double> scores; // EXAMPLE
+//   SplayMap<std::string, double> scores; // EXAMPLE

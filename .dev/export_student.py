@@ -1,11 +1,9 @@
-"""Recreate export/ from the files listed in .dev/student-files.txt."""
 from pathlib import Path
 import shutil
 import sys
 
 
 WORKSPACE = Path(__file__).resolve().parent.parent
-# Anything else, such as .dev/, must never reach students.
 STUDENT_ROOTS = ('src', '.guides', 'Makefile', '.gitignore')
 
 

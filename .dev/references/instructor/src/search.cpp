@@ -1,157 +1,147 @@
 #include "search.h"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <utility>
 
-namespace
-{
-constexpr int MAX_SIGNAL_BONUS_COUNT = 32;
-constexpr int DISTANCE_BONUS_PER_DEBRIS = SIGNAL_RANGE / 4;
-constexpr int EXPLORATION_BATCH_LENGTH = SIGNAL_RANGE;
-constexpr std::size_t MAX_QUEUE_ENTRIES = 4 * ROBOT_COUNT;
+#include "robot_neighbors.h"
 
-std::array<int, 2> neighborsOf(int robot)
+double Search::PriorityComponents::weightedScore() const
 {
-    return {(robot + ROBOT_COUNT - 1) % ROBOT_COUNT, (robot + 1) % ROBOT_COUNT};
+    return (currentSignalStrength + aheadNeighborScore + unexploredNeighborhoodFraction) * progressMultiplier;
 }
 
-std::array<int, 3> robotAndNeighbors(int robot)
+bool Search::RobotPriority::operator<(const RobotPriority& other) const
 {
-    const auto neighbors = neighborsOf(robot);
-    return {neighbors[0], robot, neighbors[1]};
-}
-}
-
-bool Search::Candidate::operator>(const Candidate& other) const
-{
-    if (priority != other.priority)
-        return priority > other.priority;
-    return robot > other.robot;
+    if (score != other.score)
+        return score > other.score;
+    return robot < other.robot;
 }
 
-Search::Search(Mothership& mothership) : mothership(mothership)
+Search::Search(Mothership& mothership) : mothership(mothership), aheadDebris(mothership)
 {
-    rebuildQueue();
+    for (int robot = 0; robot < ROBOT_COUNT; ++robot)
+        refreshPriority(robot);
 }
 
-bool Search::hasReachableSegments(int robot) const
+int Search::pathEnd(int robot) const
 {
-    return mothership.getRobotPosition(robot) < mothership.getAbysses()[robot] - 1;
+    return mothership.getAbysses()[robot] - 1;
 }
 
-long long Search::calculatePriority(int robot) const
+bool Search::hasRemainingPath(int robot) const
 {
-    const long long position = mothership.getRobotPosition(robot);
+    return mothership.getRobotPosition(robot) < pathEnd(robot);
+}
+
+int Search::currentSignalStrength(int robot) const
+{
+    const int position = mothership.getRobotPosition(robot);
     int signal = 0;
     for (int path : robotAndNeighbors(robot))
-        signal += debris[path].count(position - SIGNAL_RANGE, position + SIGNAL_RANGE);
-
-    const int signalBonus = std::min(signal, MAX_SIGNAL_BONUS_COUNT);
-    return position - static_cast<long long>(signalBonus) * DISTANCE_BONUS_PER_DEBRIS;
+        signal += debrisHistory[path].countInRange(position - SIGNAL_RANGE, position + SIGNAL_RANGE);
+    return signal;
 }
 
-std::optional<int> Search::takeNextRobot()
+double Search::unexploredNeighborhoodFraction(int robot) const
 {
-    while (!candidates.empty())
+    const int first = mothership.getRobotPosition(robot) + 1;
+    const int last = std::min(pathEnd(robot), first + SIGNAL_RANGE - 1);
+    int available = 0;
+    int examined = 0;
+    for (int path : robotAndNeighbors(robot))
     {
-        const Candidate next = candidates.top();
-        candidates.pop();
-        auto& schedule = schedules[next.robot];
-        if (next.version != schedule.version || !hasReachableSegments(next.robot))
+        const int end = std::min(last, pathEnd(path));
+        if (end < first)
             continue;
-        schedule.hasQueuedCandidate = false;
-        return next.robot;
+        available += end - first + 1;
+        examined += std::max(0, std::min(end, mothership.getRobotPosition(path)) - first + 1);
     }
-    return std::nullopt;
+    return static_cast<double>(available - examined) / available;
 }
 
-void Search::updatePriority(int robot)
+double Search::progressMultiplier(int robot) const
 {
-    auto& schedule = schedules[robot];
-    if (!hasReachableSegments(robot))
+    return std::sqrt(static_cast<double>(SIGNAL_RANGE) /
+                     (SIGNAL_RANGE + mothership.getRobotPosition(robot)));
+}
+
+Search::PriorityComponents Search::measurePriority(int robot)
+{
+    return {static_cast<double>(currentSignalStrength(robot)), aheadDebris.bestNeighborBucketScore(robot),
+            unexploredNeighborhoodFraction(robot), progressMultiplier(robot)};
+}
+
+void Search::setPriority(int robot, PriorityComponents components)
+{
+    auto entry = rankedRobots.extract({priorityComponents[robot].weightedScore(), robot});
+    priorityComponents[robot] = components;
+    if (!hasRemainingPath(robot))
     {
-        if (schedule.hasQueuedCandidate)
-            ++schedule.version;
-        schedule.hasQueuedCandidate = false;
+        aheadDebris.discardRobotCandidates(robot);
         return;
     }
-    const long long priority = calculatePriority(robot);
-    if (schedule.hasQueuedCandidate && schedule.priority == priority)
-        return;
-
-    ++schedule.version;
-    schedule.priority = priority;
-    schedule.hasQueuedCandidate = true;
-    candidates.push({priority, robot, schedule.version});
-}
-
-void Search::rebuildQueue()
-{
-    std::vector<Candidate> current;
-    current.reserve(ROBOT_COUNT);
-    for (int robot = 0; robot < ROBOT_COUNT; ++robot)
+    if (entry.empty())
+        rankedRobots.insert({components.weightedScore(), robot});
+    else
     {
-        auto& schedule = schedules[robot];
-        schedule.hasQueuedCandidate = hasReachableSegments(robot);
-        if (schedule.hasQueuedCandidate)
-        {
-            schedule.priority = calculatePriority(robot);
-            current.push_back({schedule.priority, robot, schedule.version});
-        }
+        entry.value().score = components.weightedScore();
+        rankedRobots.insert(std::move(entry));
     }
-    candidates = CandidateQueue(std::greater<Candidate>(), std::move(current));
 }
 
-void Search::recordDebris(int robot)
+void Search::refreshPriority(int robot)
 {
-    const int segment = mothership.getRobotPosition(robot);
-    debris[robot].recordDiscovery(segment);
+    setPriority(robot, hasRemainingPath(robot) ? measurePriority(robot) : PriorityComponents{});
+}
+
+void Search::refreshAffectedPriorities(int robot, int previousPosition, bool discoveredDebris)
+{
+    refreshPriority(robot);
     for (int neighbor : neighborsOf(robot))
     {
-        const long long center = mothership.getRobotPosition(neighbor);
-        if (segment >= center - SIGNAL_RANGE && segment <= center + SIGNAL_RANGE)
-            updatePriority(neighbor);
+        if (discoveredDebris)
+            refreshPriority(neighbor);
+        else if (hasRemainingPath(neighbor))
+        {
+            const int frontier = mothership.getRobotPosition(neighbor);
+            const int observedEnd = std::min({frontier + SIGNAL_RANGE, pathEnd(neighbor), pathEnd(robot)});
+            if (previousPosition >= observedEnd || mothership.getRobotPosition(robot) <= frontier)
+                continue;
+            auto components = priorityComponents[neighbor];
+            components.unexploredNeighborhoodFraction = unexploredNeighborhoodFraction(neighbor);
+            setPriority(neighbor, components);
+        }
     }
 }
 
-std::optional<long long> Search::earliestRelevantSegment(int path) const
+void Search::recordDiscovery(int robot)
 {
-    const auto& abysses = mothership.getAbysses();
-    std::optional<long long> earliest;
+    const int segment = mothership.getRobotPosition(robot);
+    debrisHistory[robot].recordDiscovery(segment);
+    aheadDebris.recordDiscovery(robot, segment);
+}
+
+void Search::discardPastDiscoveries(int path)
+{
+    int earliestSignal = std::numeric_limits<int>::max();
     for (int observer : robotAndNeighbors(path))
-    {
-        const int position = mothership.getRobotPosition(observer);
-        if (position >= abysses[observer] - 1)
-            continue;
-        const long long lower = static_cast<long long>(position) - SIGNAL_RANGE;
-        if (!earliest || lower < *earliest)
-            earliest = lower;
-    }
-    return earliest;
-}
-
-void Search::discardObsoleteDebris(int observer)
-{
-    for (int path : robotAndNeighbors(observer))
-    {
-        if (debris[path].size() == 0)
-            continue;
-        const auto earliest = earliestRelevantSegment(path);
-        if (earliest)
-            debris[path].discardBefore(*earliest);
-        else
-            debris[path].discardAll();
-    }
+        if (hasRemainingPath(observer))
+            earliestSignal = std::min(earliestSignal, mothership.getRobotPosition(observer) - SIGNAL_RANGE);
+    debrisHistory[path].discardBefore(earliestSignal);
 }
 
 std::optional<Location> Search::findShipwreck()
 {
-    while (const auto next = takeNextRobot())
+    while (!rankedRobots.empty())
     {
-        const int robot = *next;
+        const int robot = rankedRobots.begin()->robot;
         mothership.switchToRobot(robot);
+        const int previousPosition = mothership.getRobotPosition(robot);
         int moved = 0;
-        while (hasReachableSegments(robot) && moved < EXPLORATION_BATCH_LENGTH)
+        bool discoveredDebris = false;
+        while (hasRemainingPath(robot) && moved < SIGNAL_RANGE)
         {
             const DriveResult result = mothership.driveActiveRobot();
             moved += result.segmentsMoved;
@@ -159,14 +149,17 @@ std::optional<Location> Search::findShipwreck()
                 return Location{robot, mothership.getRobotPosition(robot)};
             if (result.reason == DriveStopReason::DebrisFound)
             {
-                recordDebris(robot);
+                recordDiscovery(robot);
+                discoveredDebris = true;
                 break;
             }
         }
-        discardObsoleteDebris(robot);
-        updatePriority(robot);
-        if (candidates.size() > MAX_QUEUE_ENTRIES)
-            rebuildQueue();
+        for (int path : robotAndNeighbors(robot))
+        {
+            discardPastDiscoveries(path);
+            aheadDebris.discardPassedBuckets(path);
+        }
+        refreshAffectedPriorities(robot, previousPosition, discoveredDebris);
     }
     return std::nullopt;
 }

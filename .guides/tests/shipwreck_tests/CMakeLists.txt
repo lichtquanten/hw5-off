@@ -1,4 +1,3 @@
-# Like the root Makefile, compile every .cpp file in src/.
 file(GLOB STUDENT_SOURCES "${HW_DIR}/src/*.cpp")
 add_library(hw5_shipwreck STATIC ${STUDENT_SOURCES})
 target_include_directories(hw5_shipwreck PUBLIC "${HW_DIR}/src")

@@ -1,5 +1,3 @@
-# Build the installed sources so Google Test headers and libraries always match.
-# Ubuntu's libgtest-dev package installs sources in one of these locations.
 find_path(GTEST_SOURCE_DIR src/gtest-all.cc
     HINTS /usr/src/googletest/googletest /usr/src/gtest
     DOC "Google Test source directory containing include/ and src/")

@@ -1,0 +1,27 @@
+#include "search.h"
+
+std::optional<Location> Search::findShipwreck()
+{
+    bool workRemaining = true;
+    while (workRemaining)
+    {
+        workRemaining = false;
+        for (int robot = 0; robot < ROBOT_COUNT; ++robot)
+        {
+            const int end = mothership.getAbysses()[robot] - 1;
+            if (mothership.getRobotPosition(robot) >= end)
+                continue;
+            workRemaining = true;
+            mothership.switchToRobot(robot);
+            int moved = 0;
+            while (mothership.getRobotPosition(robot) < end && moved < SIGNAL_RANGE)
+            {
+                const DriveResult result = mothership.driveActiveRobot();
+                moved += result.segmentsMoved;
+                if (result.reason == DriveStopReason::ShipwreckFound)
+                    return Location{robot, mothership.getRobotPosition(robot)};
+            }
+        }
+    }
+    return std::nullopt;
+}

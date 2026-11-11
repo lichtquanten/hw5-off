@@ -10,7 +10,7 @@ add_compile_options(-Wall)
 get_filename_component(HW_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
 include("${HW_DIR}/.guides/tests/GoogleTest.cmake")
 
-if(NOT REFERENCE MATCHES "^(starter|instructor)$")
+if(NOT REFERENCE MATCHES "^(instructor|round_robin)$")
     message(FATAL_ERROR "Use 'make -f .dev/Makefile references' from the workspace root to configure this project.")
 endif()
 set(REFERENCE_SRC "${CMAKE_CURRENT_SOURCE_DIR}/${REFERENCE}/src")

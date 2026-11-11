@@ -10,22 +10,20 @@ from typing import Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tests'))
 
-from runner.catalog import TESTS
 from runner.execution import CheckRunner
 from runner.output import print_results
 from runner.processes import BuildError, CheckError
+from runner.results import calculate_grade
 
 
 def evaluate() -> Tuple[float, str]:
     try:
         results = CheckRunner().run()
     except BuildError as error:
-        return 0.0, 'Grade: 0.00%\nYour submission could not build.\n\n' + str(error)
-    passed = sum(result.passed for result in results)
-    grade = 100.0 * passed / len(TESTS)
+        return 0.0, 'Score: 0.0%\nYour submission could not build.\n\n' + str(error)
+    grade = calculate_grade(results)
     buffer = io.StringIO()
     with redirect_stdout(buffer):
-        print(f'Grade: {grade:.2f}% ({passed}/{len(TESTS)} tests passed)')
         print_results(results)
     return grade, buffer.getvalue()
 

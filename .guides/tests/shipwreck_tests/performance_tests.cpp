@@ -7,47 +7,72 @@ using shipwreck_tests::WreckAvailability;
 
 namespace
 {
-constexpr unsigned SCENARIO_SEED = 155920;
-constexpr int BACKGROUND_DEBRIS_PER_ROBOT = 1000;
+constexpr int BENCHMARK_PATH_LENGTH = 250'000;
+constexpr int BENCHMARK_SCENARIOS = 8;
 
 Scenario performanceScenario(
-    DebrisPattern pattern, int backgroundPerRobot = BACKGROUND_DEBRIS_PER_ROBOT,
-    PathLayout layout = PathLayout::Uniform,
-    WreckAvailability wreckAvailability = WreckAvailability::Reachable)
+    unsigned seed, DebrisPattern pattern, int scenario,
+    PathLayout layout = PathLayout::Uniform)
 {
+    const int robot = 12 + 25 * (scenario / 2);
+    const int depthPercent = scenario % 2 == 0 ? 25 : 75;
+    const int background = pattern == DebrisPattern::Sparse ? 2 : BENCHMARK_PATH_LENGTH / 5000;
     return shipwreck_tests::makePerformanceScenario(
-        SCENARIO_SEED, backgroundPerRobot, pattern, layout, wreckAvailability);
+        seed + robot * 10 + depthPercent, background, pattern, layout,
+        WreckAvailability::Reachable, BENCHMARK_PATH_LENGTH,
+        Location{robot, BENCHMARK_PATH_LENGTH * depthPercent / 100});
 }
 }
 
 TEST_F(Shipwreck, LargeClusteredDebris)
 {
-    checkSearch(performanceScenario(DebrisPattern::Clustered));
+    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
+    {
+        SCOPED_TRACE(scenario);
+        checkSearch(performanceScenario(155920, DebrisPattern::Clustered, scenario));
+    }
 }
 
 TEST_F(Shipwreck, LargeMisleadingClusters)
 {
-    checkSearch(performanceScenario(DebrisPattern::Misleading));
+    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
+    {
+        SCOPED_TRACE(scenario);
+        checkSearch(performanceScenario(155921, DebrisPattern::Misleading, scenario));
+    }
 }
 
 TEST_F(Shipwreck, LargeWeakSignal)
 {
-    checkSearch(performanceScenario(DebrisPattern::WeakSignal));
+    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
+    {
+        SCOPED_TRACE(scenario);
+        checkSearch(performanceScenario(155922, DebrisPattern::WeakSignal, scenario));
+    }
 }
 
 TEST_F(Shipwreck, LargeSparseDebris)
 {
-    checkSearch(performanceScenario(DebrisPattern::Sparse, 2));
+    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
+    {
+        SCOPED_TRACE(scenario);
+        checkSearch(performanceScenario(155923, DebrisPattern::Sparse, scenario));
+    }
 }
 
 TEST_F(Shipwreck, LargeUnequalPaths)
 {
-    checkSearch(performanceScenario(
-        DebrisPattern::Misleading, BACKGROUND_DEBRIS_PER_ROBOT, PathLayout::Mixed));
+    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
+    {
+        SCOPED_TRACE(scenario);
+        checkSearch(performanceScenario(
+            155924, DebrisPattern::Misleading, scenario, PathLayout::Mixed));
+    }
 }
 
 TEST_F(Shipwreck, LargeUnfindable)
 {
-    checkSearch(performanceScenario(DebrisPattern::Clustered, BACKGROUND_DEBRIS_PER_ROBOT,
+    checkSearch(shipwreck_tests::makePerformanceScenario(
+        155925, 1000, DebrisPattern::Clustered,
         PathLayout::Uniform, WreckAvailability::Unfindable));
 }

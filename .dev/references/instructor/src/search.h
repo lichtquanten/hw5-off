@@ -1,12 +1,10 @@
 #pragma once
 
 #include <array>
-#include <cstdint>
-#include <functional>
 #include <optional>
-#include <queue>
-#include <vector>
+#include <set>
 
+#include "ahead_debris.h"
 #include "debris_history.h"
 #include "mothership.h"
 
@@ -17,34 +15,37 @@ public:
     std::optional<Location> findShipwreck();
 
 private:
-    struct Candidate
+    struct PriorityComponents
     {
-        long long priority;
+        double currentSignalStrength = 0;
+        double aheadNeighborScore = 0;
+        double unexploredNeighborhoodFraction = 0;
+        double progressMultiplier = 0;
+        double weightedScore() const;
+    };
+
+    struct RobotPriority
+    {
+        double score;
         int robot;
-        std::uint64_t version;
-        bool operator>(const Candidate& other) const;
+        bool operator<(const RobotPriority& other) const;
     };
-
-    struct RobotSchedule
-    {
-        long long priority = 0;
-        std::uint64_t version = 0;
-        bool hasQueuedCandidate = false;
-    };
-
-    using CandidateQueue = std::priority_queue<Candidate, std::vector<Candidate>, std::greater<Candidate>>;
 
     Mothership& mothership;
-    std::array<DebrisHistory, ROBOT_COUNT> debris;
-    std::array<RobotSchedule, ROBOT_COUNT> schedules{};
-    CandidateQueue candidates;
+    std::array<DebrisHistory, ROBOT_COUNT> debrisHistory;
+    AheadDebris aheadDebris;
+    std::array<PriorityComponents, ROBOT_COUNT> priorityComponents{};
+    std::set<RobotPriority> rankedRobots;
 
-    bool hasReachableSegments(int robot) const;
-    long long calculatePriority(int robot) const;
-    std::optional<int> takeNextRobot();
-    void updatePriority(int robot);
-    void rebuildQueue();
-    void recordDebris(int robot);
-    std::optional<long long> earliestRelevantSegment(int path) const;
-    void discardObsoleteDebris(int observer);
+    int pathEnd(int robot) const;
+    bool hasRemainingPath(int robot) const;
+    int currentSignalStrength(int robot) const;
+    double unexploredNeighborhoodFraction(int robot) const;
+    double progressMultiplier(int robot) const;
+    PriorityComponents measurePriority(int robot);
+    void setPriority(int robot, PriorityComponents components);
+    void refreshPriority(int robot);
+    void refreshAffectedPriorities(int robot, int previousPosition, bool discoveredDebris);
+    void recordDiscovery(int robot);
+    void discardPastDiscoveries(int path);
 };

@@ -1,4 +1,3 @@
-"""Privately build Linux x86-64 references and check both supported runtimes."""
 import os
 from pathlib import Path
 import shutil
@@ -11,8 +10,7 @@ TEST_SUITE = WORKSPACE / '.guides/tests'
 
 
 VERSIONS = ('18.04', '20.04')
-STRATEGIES = ('starter', 'instructor')
-# Print the C library version, then run every test in each published binary.
+STRATEGIES = ('instructor', 'round_robin')
 VALIDATE = 'getconf GNU_LIBC_VERSION && ' + ' && '.join(
     '/references/' + name + '/shipwreck_reference' for name in STRATEGIES)
 
@@ -43,6 +41,7 @@ def main():
         mounts = ['--mount', 'type=bind,src=' + str(WORKSPACE) + ',dst=/workspace,readonly',
                   '--mount', 'type=bind,src=' + str(cache) + ',dst=/workspace/build/references']
         for name in STRATEGIES:
+            (TEST_SUITE / 'references' / name / 'bin').mkdir(parents=True, exist_ok=True)
             destination = output / name
             destination.mkdir(parents=True)
             mounts += ['--mount', 'type=bind,src=' + str(destination)
@@ -54,12 +53,10 @@ def main():
 
         for version in VERSIONS:
             print('Checking the same binaries on Ubuntu ' + version + '...', flush=True)
-            # Only executables are mounted during validation; no solution source.
             run(['docker', 'run', '--rm', '--platform', 'linux/amd64',
                  '--mount', 'type=bind,src=' + str(output) + ',dst=/references,readonly',
                  images[version], 'sh', '-c', VALIDATE])
 
-        # Publish only after both runtime checks pass.
         for name in STRATEGIES:
             destination = TEST_SUITE / 'references' / name / 'bin/shipwreck_reference'
             with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as temporary:

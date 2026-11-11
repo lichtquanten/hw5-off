@@ -26,7 +26,7 @@ class CheckRunner:
         self.performance_tests = {
             'Yours': tests / 'shipwreck_runtime_tests',
             'Instructor': references / 'instructor/bin/shipwreck_reference',
-            'Starter': references / 'starter/bin/shipwreck_reference',
+            'Round Robin': references / 'round_robin/bin/shipwreck_reference',
         }
 
     def run(self) -> List[TestResult]:
@@ -42,7 +42,6 @@ class CheckRunner:
     def build_tests(self) -> None:
         print('Building tests...', flush=True)
         BUILD_DIRECTORY.mkdir(parents=True, exist_ok=True)
-        # Configure on every run so that newly added src/*.cpp files are found.
         configure = run_process([
             'cmake', '-H' + str(TEST_SUITE), '-B' + str(BUILD_DIRECTORY), '-G', 'Unix Makefiles',
         ])
@@ -65,7 +64,7 @@ class CheckRunner:
             return
         print('Running references...', flush=True)
         for result in targets:
-            for strategy in ('Instructor', 'Starter'):
+            for strategy in ('Instructor', 'Round Robin'):
                 command = [str(self.performance_tests[strategy])]
                 result.references.append(self.run_case(result.test, strategy, command))
 
@@ -97,7 +96,6 @@ class CheckRunner:
             self.profile_case(result, directory)
 
     def profile_case(self, result: TestResult, directory: Path) -> None:
-        # Peak memory is informational: when profiling fails, it is left blank.
         report = directory / f'{result.strategy}.{result.test.full_name}.out'
         heading = f'Massif {result.strategy}: {result.test.full_name}'
         command = [
@@ -106,7 +104,6 @@ class CheckRunner:
             '--gtest_filter=' + result.test.full_name,
         ]
         try:
-            # References are fixed; student memory is measured on every run.
             cache = report.with_suffix('.sha256')
             cache_key = None
             if result.strategy != 'Yours':
@@ -121,7 +118,6 @@ class CheckRunner:
                         return
                 except (CheckError, OSError):
                     pass
-                # Failed or interrupted profiling must not leave a reusable key.
                 remove_if_exists(cache)
             remove_if_exists(report)
             process = run_process(command, BUILD_DIRECTORY, PROFILE_TIMEOUT_SECONDS)
@@ -133,3 +129,6 @@ class CheckRunner:
                 cache.write_text(cache_key)
         except (CheckError, OSError) as error:
             write_process_log(self.log_path, heading, str(error))
+            result.failure = '\n'.join(part for part in (
+                result.failure, 'Peak memory measurement unavailable: ' + str(error),
+            ) if part)

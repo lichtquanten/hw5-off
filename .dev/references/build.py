@@ -30,7 +30,6 @@ def build_reference(strategy: str, references_directory: Path) -> None:
             raise CheckError(process.output)
     destination = TEST_SUITE / 'references' / strategy / 'bin/shipwreck_reference'
     destination.parent.mkdir(parents=True, exist_ok=True)
-    # build_portable.py publishes this copy only after checking it.
     shutil.copy2(build / 'shipwreck_reference', destination)
     print(f'Built {destination}')
 
@@ -38,8 +37,8 @@ def build_reference(strategy: str, references_directory: Path) -> None:
 def main() -> int:
     references_directory = Path(__file__).resolve().parent
     failed = False
-    for name in ('starter', 'instructor'):
-        print(f'Building {name.capitalize()}...', flush=True)
+    for name in ('instructor', 'round_robin'):
+        print(f'Building {name.replace("_", " ").title()}...', flush=True)
         try:
             build_reference(name, references_directory)
         except (CheckError, OSError) as error:

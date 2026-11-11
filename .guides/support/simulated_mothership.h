@@ -24,7 +24,8 @@ public:
   long long getElapsedTicks() const override;
 
   void switchToRobot(int robotIndex) override;
-  DriveResult driveActiveRobot() override;
+  DriveResult driveActiveRobot(
+      int maxSegments = MAX_SEGMENTS_PER_DRIVE) override;
 
   std::optional<Location> getDiscoveredShipwreck() const;
   bool allPathsExplored() const;

@@ -47,5 +47,8 @@ public:
   virtual long long getElapsedTicks() const = 0;
 
   virtual void switchToRobot(int robot) = 0;
-  [[nodiscard]] virtual DriveResult driveActiveRobot() = 0;
+  // Request 1–100 segments. Debris or the wreck stops a drive early;
+  // reaching an abyss or traveling beyond the tether causes failure.
+  [[nodiscard]] virtual DriveResult driveActiveRobot(
+      int maxSegments = MAX_SEGMENTS_PER_DRIVE) = 0;
 };

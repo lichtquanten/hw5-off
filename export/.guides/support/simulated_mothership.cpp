@@ -89,10 +89,10 @@ void SimulatedMothership::switchToRobot(int robotIndex)
   }
 }
 
-DriveResult SimulatedMothership::driveActiveRobot()
+DriveResult SimulatedMothership::driveActiveRobot(int maxSegments)
 {
   auto &robot = robots[activeRobotIndex];
-  const DriveResult result = robot.advance();
+  const DriveResult result = robot.advance(maxSegments);
   elapsedTicks += result.segmentsMoved;
 
   if (result.reason == DriveStopReason::ShipwreckFound)

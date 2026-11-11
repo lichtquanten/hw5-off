@@ -1,8 +1,6 @@
 .gitignore
 Makefile
 src/mothership.h
-src/examples/robot_selector.cpp
-src/examples/robot_selector.h
 src/examples/using_data_structures.cpp
 src/trees.h
 src/seafloor_survey.cpp

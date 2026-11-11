@@ -27,7 +27,7 @@ Search::Search(Mothership& mothership) : mothership(mothership), aheadDebris(mot
 
 int Search::pathEnd(int robot) const
 {
-    return mothership.getAbysses()[robot] - 1;
+    return std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);
 }
 
 bool Search::hasRemainingPath(int robot) const
@@ -143,7 +143,9 @@ std::optional<Location> Search::findShipwreck()
         bool discoveredDebris = false;
         while (hasRemainingPath(robot) && moved < SIGNAL_RANGE)
         {
-            const DriveResult result = mothership.driveActiveRobot();
+            const int safeDistance = pathEnd(robot) - mothership.getRobotPosition(robot);
+            const DriveResult result = mothership.driveActiveRobot(
+                std::min(MAX_SEGMENTS_PER_DRIVE, safeDistance));
             moved += result.segmentsMoved;
             if (result.reason == DriveStopReason::ShipwreckFound)
                 return Location{robot, mothership.getRobotPosition(robot)};

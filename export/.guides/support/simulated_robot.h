@@ -17,7 +17,7 @@ public:
   SimulatedRobot(int reachableEnd, std::vector<int> debrisSegments,
                  std::optional<int> shipwreckSegment);
 
-  [[nodiscard]] DriveResult advance();
+  [[nodiscard]] DriveResult advance(int maxSegments);
   int getPosition() const;
   bool hasReachedEnd() const;
 

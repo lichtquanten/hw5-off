@@ -2,38 +2,77 @@
 
 You must find a shipwreck on the ocean floor!
 
-# Search
+<image>
 
-You are looking for a shipwreck. The ship sank to the ocean floor a long time ago. You’re on a mothership out in the ocean. You have N underwater robots to use for your search.
+A ship sank to the ocean floor a long time ago. You on a mothership, with 100 underwater robots to use for the search.
 
-Each robot roves along the sea floor, following a straight line. Each robot travels radially from the mothership in a different direction.
+As the ship sank, it scattered debris along the seafloor. The debris can be used to aid the search.
 
-You can drive one robot at a time. You do this by driving the robot forward for 1 segment (a unit of distance) in 1 tick (a unit of time). You can switch from one robot to another. This switch takes 5 ticks.
+Your goal is to find the shipwreck, or to report that the shipwreck is not findable.
 
-After driving a segment, you get a report on if the robot found:
+## Robots
 
+The robots start evenly spaced in a circle around the mothership. Each robot moves in a straight line, radially out from the mothership.
+
+Each robot's path is divided into segments. Each segment takes 1 tick (a unit of time) to drive.
+
+The shipwreck occupies one segment and is reachable by at most one robot.
+
+You can drive one robot at a time. When instructed to drive, a robot drives forward for up to 100 segments, stopping sooner if it encounters debris or the shipwreck.
+
+After driving, the robot will report finding:
 - nothing,
 - debris, or
 - the shipwreck.
 
-Each robot is attached to a tether of length T segments. No robot can travel more than T segments. T is large, on the order of billions of segments.
+After driving a robot, you can choose to drive the same robot again, or switch to another robot. Switching to another robot takes 10 ticks.
 
-Robots may encounter abysses. Abysses are deep openings in the ground. When a robot reaches an abyss, it can go no further. You are given a list of positions for the abysses at the start.
+Each robot is attached to the mothership by a tether of length 10 million segments. Driving beyond the tether length causes failure.
 
-The shipwreck will be in one segment and reachable by one robot. As the ship originally sank, debris scattered from the ship about the ocean floor. You expect that the ship will be surrounded by debris. Since much time has passed since the sinking, though, debris will have been swept up and carried to areas away from the shipwreck.
+## Abysses
 
-You can reason about debris using a measure called signal strength. Signal strength predicts the likelihood of finding the shipwreck near to a robot. Debris found near a robot adds to signal strength. That is, more debris found nearby indicates a higher likelihood of finding the shipwreck. Nearby is considered:
+Robots may encounter abysses. Abysses are deep openings in the ground. Driving into an abyss causes failure. You are given a list of positions for the abysses at the start.
 
-  - within M segments of a robot, along its own path
-  - within M segments of a robot, along the paths of the robots to its left and right
+## Debris and Signal Strength
 
-Each nearby segment with debris found, whether along a robot’s own path or its neighbors’ paths, contributes equally to signal strength.
+You expect that the shipwreck will be surrounded by debris. Since much time has passed since the sinking, though, debris will have been swept up and carried to areas away from the shipwreck.
 
-Your goal is to find the shipwreck, or to report that the shipwreck is not findable.
+You can reason about debris using a measure called signal strength. Signal strength predicts the likelihood of finding the shipwreck near a robot. Debris found nearby a robot adds to signal strength.
 
-You should try to find the shipwreck as quickly as possible, if it is findable. That said, this assignment makes use of heuristics, rather than mathematical formulas defining an optimal approach. You can use your judgment and intuition to come up with and justify heuristics. There is no single right solution to this problem.
+For signal strength, “nearby” means:
+- within 500 segments of a robot, along its own path
+- within 500 segments of a robot, along the paths of the robots immediately to its left and right
 
-# Guiding Your Problem Solving
+Each nearby segment of debris has been found contributes equally to signal strength, whether it is along a robot's own path or its neighbors' paths.
+
+# Key Info
+
+| Item | Value |
+| --- | --- |
+| Number of robots | 100 |
+| Speed | 1 segment/tick |
+| Maximum distance per drive | 100 segments |
+| Cost to switch robots | 10 ticks |
+| Tether length | 10 million segments |
+| Signal range | Within 500 segments, along the robot's own path and its two neighboring paths |
+
+# Evaluation
+
+Your goal is to find the shipwreck, or to report that the shipwreck is not findable, while making defensible decisions as far as search heuristic and effective use of data structures.
+
+The assignment will be evaluated on whether your solution finds the shipwreck or correctly reports that it is not findable.
+
+The assignment will also be evaluated on:
+
+- search efficiency, as measured in ticks
+- runtime cost, i.e. how long in seconds it takes for the program to run
+- memory cost, i.e. how many bytes of memory the program uses at its peak.
+
+Your solution will be evaluated against a fix threshold for each of those criteria, as seen with `make test`. That said, there is no single optimal approach to this problem.
+
+# Developing Your Solution
+
+You should try to find the shipwreck as quickly as possible, if it is findable. That said, this assignment makes use of heuristics, rather than mathematical formulas defining an optimal approach. A heuristic is a strategy intended to solve a problem efficiently, without guaranteeing the most efficient approach. You can use your judgment and intuition to come up with and justify heuristics.
 
 You have two key questions to consider:
 
@@ -41,26 +80,45 @@ You have two key questions to consider:
 
 2. How do you store, access, and update the data needed for this search heuristic?
 
-A heuristic is "an algorithmic approach that utilizes human expert knowledge to build a function for decision-making."
+When improving your solution's performance, you will usually want to think about your overall approach, rather than going through your code line by line.
 
-# Data Structures
+## Data Structures
 
 Consider the data structures you have learned thus far in the course:
 
-Look at `src/examples/using_data_structures.cpp`. You will find examples of how you can use each of these data structures.
+- Linked list
+- Stack
+- Queue
+- ArrayLists
+- Heap
+- Hash table
+- Trees
+- AVL tree
+- Splay tree
 
-  - Linked list Stack
-  - Queue
-  - ArrayLists
-  - Hash table
-  - Heap
-  - Trees
-  - AVL tree
-  - Splay tree
+Look at `src/examples/using_data_structures.cpp`. You will find examples of how you can use each of these data structures should any seem useful in the assignment.
 
-Consider how these data structures can help you.
+# Building Off of the Code
 
-# Running Your Code
+
+## Starter Code
+
+- `src/search.h: Search class performs the search. Interacts with the mothership re robots. 
+- `src/search.cpp: The search object receives a mothership can performs a search. The findShipwreck function is what does the serach.
+- `src/mothership.h: Mothership class controls the robots, includign setting hte active robot, drivin geh robot forward, and reporting on anything fond.
+- src/seafloor_survey.h/.cpp: Exampe of a class that keeps track of debris that's been found. Not htat useful rn.
+
+Throughout the starter code, there are various "TOY" pieces of code. This toy code is not very good or defensible and should liekly be replaced. It shows one possible approach, but not a good one.
+
+The code for running against specific scenarios etc is not visible.
+
+# Adding classes, files
+
+You will likely want to add more classes and files.
+
+You do not need to update the Makefile when adding files to `src`. The Makefile is configured already to find `.ccp` and `.h` files in `src/`.
+
+## Running Tests
 
 To run a quick check for correctness:
 
@@ -69,18 +127,11 @@ make smoke-test
 ```
 
 To run the full test suite, including correctness and performance tests:
+
 ```bash
 make test
 ```
 
 The full test suite may take up to 5 minutes or so to run.
 
-The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution. The round-robin solution advances each robot one after the other, without considering debris, until finding the shipwreck. We do not share how the instructor solution works - only its performance. The instructor solution uses defensible search heuristics and makes effective use of data strutures. That said, you can outperform the instructor solution! It is one of many reasonable solutions, and there is no optimal solution to this problem.
-
-# Evaluation
-
-The assignment will be graded on correctness of finding the shipwreck, or of reporting that the shipwreck is not findable.
-
-The assignment will also be graded on search efficiency, as measured in ticks; runtime cost, i.e. how long in seconds it takes for the program to run; and memory cost, i.e. how many bytes of memory the program uses at its peak.
-
-In improving your solution's performance, you will typically want to think at a conceptual level about your approach, rather than thinking about your code on a line-by-line basis. Coming up with an approach that is efficient as far as ticks, runtime, and memory is something that can be done on pen and paper.
+The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution. The round-robin solution advances each robot one after the other, without considering debris, until finding the shipwreck. We do not share how the instructor solution works - only its performance. The instructor solution uses defensible search heuristics and makes effective use of data structures. That said, you can outperform the instructor solution! It is one of many reasonable solutions, and there is no optimal solution to this problem.

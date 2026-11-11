@@ -16,15 +16,14 @@ SimulatedRobot::SimulatedRobot(int reachableEnd, std::vector<int> debrisSegments
   std::sort(this->debrisSegments.begin(), this->debrisSegments.end());
 }
 
-DriveResult SimulatedRobot::advance()
+DriveResult SimulatedRobot::advance(int maxSegments)
 {
-  if (hasReachedEnd())
+  if (maxSegments < 1 || maxSegments > MAX_SEGMENTS_PER_DRIVE)
   {
-    throw std::logic_error("Cannot drive a robot that has reached its path limit.");
+    throw std::invalid_argument("Drive distance must be between 1 and 100 segments.");
   }
 
-  int destination = position +
-                    std::min(MAX_SEGMENTS_PER_DRIVE, reachableEnd - position);
+  int destination = position + maxSegments;
 
   if (nextDebrisIndex < debrisSegments.size())
   {
@@ -34,6 +33,14 @@ DriveResult SimulatedRobot::advance()
   if (shipwreckSegment && *shipwreckSegment > position)
   {
     destination = std::min(destination, *shipwreckSegment);
+  }
+
+  // Only an earlier discovery can stop an unsafe request before the hazard.
+  if (destination > reachableEnd)
+  {
+    throw std::runtime_error(reachableEnd < TETHER_LENGTH
+                                 ? "Robot drove into an abyss."
+                                 : "Robot drove beyond its tether length.");
   }
 
   const int moved = destination - position;

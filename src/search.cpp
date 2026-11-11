@@ -12,7 +12,7 @@ Search::Search(Mothership &mothership)
 
 std::optional<Location> Search::findShipwreck()
 {
-  /* BEGIN - TOY APPROACH (CHANGE OR REPLACE ANYTHING) */
+  /* BEGIN - TOY APPROACH (CHANGE OR REPLACE) */
 
   for (int robot = 0; robot < ROBOT_COUNT; ++robot)
   {
@@ -42,7 +42,7 @@ std::optional<Location> Search::findShipwreck()
   return std::nullopt;
   /* END - TOY APPROACH*/
 
-  /* BEGIN - ANOTHER TOY APPROACH
+  /* BEGIN - ALTERNATIVE TOY APPROACH
 
   auto robot = robotSelector.choose(); // EXAMPLE - USING DATA MEMBER
   if (robot)
@@ -56,5 +56,5 @@ std::optional<Location> Search::findShipwreck()
   }
   return std::nullopt;
 
-  END - ANOTHER TOY APPROACH */
+  END - ALTERNATIVE TOY APPROACH */
 }

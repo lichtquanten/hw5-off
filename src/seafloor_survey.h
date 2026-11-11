@@ -1,6 +1,5 @@
 /*
  * OPTIONAL HELPER - EDIT OR REPLACE
- * You may change this class or use your own classes and files.
  */
 
 #pragma once
@@ -18,7 +17,7 @@ public:
   /* Add your own public members as needed. */
 
 private:
-  /* BEGIN - TOY STORAGE (CHANGE OR REPLACE ANYTHING) */
+  /* BEGIN - TOY STORAGE (CHANGE OR REPLACE) */
 
   std::vector<Location> debrisLocations;
 

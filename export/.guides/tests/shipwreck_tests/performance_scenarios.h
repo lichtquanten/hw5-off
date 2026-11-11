@@ -28,7 +28,6 @@ inline DebrisDistribution debrisDistribution(DebrisPattern pattern)
     case DebrisPattern::Clustered:
         break;
     case DebrisPattern::Misleading:
-        // Denser, shorter-lived patches can distract from the broader wreck field.
         distribution.decoyDensityDivisor = 5;
         break;
     case DebrisPattern::WeakSignal:
@@ -50,8 +49,6 @@ inline void addDebrisCluster(Scenario& scenario, std::mt19937& random,
     {
         const int neighborOffset = static_cast<int>(random() % 3) - 1;
         const int neighbor = (center.robot + ROBOT_COUNT + neighborOffset) % ROBOT_COUNT;
-        // A broad triangular field: clues appear before the wreck, and density
-        // increases toward its depth. Each discovered segment still counts once.
         const int segmentOffset = static_cast<int>(random() % (radius + 1)) -
                                   static_cast<int>(random() % (radius + 1));
         const int segment = center.segment + segmentOffset;
@@ -124,8 +121,6 @@ inline Scenario makePerformanceScenario(
     }
 
     const int wreckRadius = std::max(SIGNAL_RANGE, 3 * pathLength / 4);
-    // Cap allocation on full-size maps while preserving relative field density
-    // between the strong, weak, and sparse families.
     const int wreckSamples = std::min(50'000, wreckRadius / 10) * 10 /
                              distribution.wreckDensityDivisor;
     addDebrisCluster(scenario, random, *scenario.shipwreck, wreckRadius, wreckSamples);
@@ -142,7 +137,6 @@ inline Scenario makePerformanceScenario(
         }
     }
 
-    // The wreck's debris cluster stays behind as a decoy.
     if (wreckAvailability == WreckAvailability::Unfindable)
         scenario.shipwreck.reset();
     normalizeDebris(scenario, random);

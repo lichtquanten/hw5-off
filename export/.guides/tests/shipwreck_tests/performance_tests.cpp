@@ -14,8 +14,6 @@ Scenario performanceScenario(
     unsigned seed, DebrisPattern pattern, int scenario,
     PathLayout layout = PathLayout::Uniform)
 {
-    // Balance early/late robot indices against shallow/deep wrecks. Generate
-    // and destroy one map at a time so peak memory does not include the suite.
     const int robot = 12 + 25 * (scenario / 2);
     const int depthPercent = scenario % 2 == 0 ? 25 : 75;
     const int background = pattern == DebrisPattern::Sparse ? 2 : BENCHMARK_PATH_LENGTH / 5000;
@@ -74,7 +72,6 @@ TEST_F(Shipwreck, LargeUnequalPaths)
 
 TEST_F(Shipwreck, LargeUnfindable)
 {
-    // Keep a full-size exhaustive search for runtime and memory stress.
     checkSearch(shipwreck_tests::makePerformanceScenario(
         155925, 1000, DebrisPattern::Clustered,
         PathLayout::Uniform, WreckAvailability::Unfindable));

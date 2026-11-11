@@ -42,7 +42,6 @@ class CheckRunner:
     def build_tests(self) -> None:
         print('Building tests...', flush=True)
         BUILD_DIRECTORY.mkdir(parents=True, exist_ok=True)
-        # Configure on every run so that newly added src/*.cpp files are found.
         configure = run_process([
             'cmake', '-H' + str(TEST_SUITE), '-B' + str(BUILD_DIRECTORY), '-G', 'Unix Makefiles',
         ])
@@ -97,7 +96,6 @@ class CheckRunner:
             self.profile_case(result, directory)
 
     def profile_case(self, result: TestResult, directory: Path) -> None:
-        # A missing measurement cannot earn memory credit.
         report = directory / f'{result.strategy}.{result.test.full_name}.out'
         heading = f'Massif {result.strategy}: {result.test.full_name}'
         command = [
@@ -106,7 +104,6 @@ class CheckRunner:
             '--gtest_filter=' + result.test.full_name,
         ]
         try:
-            # References are fixed; student memory is measured on every run.
             cache = report.with_suffix('.sha256')
             cache_key = None
             if result.strategy != 'Yours':
@@ -121,7 +118,6 @@ class CheckRunner:
                         return
                 except (CheckError, OSError):
                     pass
-                # Failed or interrupted profiling must not leave a reusable key.
                 remove_if_exists(cache)
             remove_if_exists(report)
             process = run_process(command, BUILD_DIRECTORY, PROFILE_TIMEOUT_SECONDS)

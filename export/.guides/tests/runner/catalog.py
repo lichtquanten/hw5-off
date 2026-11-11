@@ -19,7 +19,6 @@ class TestDefinition(NamedTuple):
         return f'[{self.number:02d}]'
 
 
-# Only tests listed here are run and graded.
 TESTS = (
     TestDefinition(1, 'NoReachablePaths', 'All Paths Blocked'),
     TestDefinition(2, 'EmptyUnequalPaths', 'Empty Unequal Paths'),
@@ -33,7 +32,6 @@ TESTS = (
     TestDefinition(10, 'FullFleetNoWreck', 'No Wreck, All Paths Open'),
     TestDefinition(11, 'IndependentSearches', 'Independent Searches'),
     TestDefinition(12, 'SeededScenarios', 'Varied Generated Scenarios'),
-    # Strict upper bounds, shared by the displayed checks and grading.
     TestDefinition(
         13, 'LargeClusteredDebris', 'Clustered Debris', is_performance=True,
         max_ticks=50_000_000, max_runtime_seconds=8, max_memory_bytes=4 * 1024 * 1024,

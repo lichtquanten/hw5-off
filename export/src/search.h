@@ -11,7 +11,7 @@
 #include "seafloor_survey.h"
 
 /* BEGIN EXAMPLE - INCLUDE YOUR OWN HEADER FILE
-#include "robot_selector.h"
+#include "examples/robot_selector.h"
 END EXAMPLE */
 
 class Search

@@ -23,7 +23,6 @@ class TerminalStyle(NamedTuple):
 def format_count(value: Optional[int]) -> str:
     if value is None:
         return '—'
-    # Round for display only; thresholds always use the original measurement.
     rounded = float(f'{value:.4g}')
     for scale, suffix in ((1_000_000_000, 'B'), (1_000_000, 'M'), (1_000, 'K')):
         if rounded >= scale:

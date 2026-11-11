@@ -10,7 +10,6 @@ TICK_MEASUREMENT = re.compile(r'\[ TICKS +\] scenarios=(\d+) total=(\d+)')
 MEMCHECK_ERRORS = re.compile(r'==\d+== ERROR SUMMARY: ([\d,]+)')
 MEMCHECK_LINES = re.compile(r'^==\d+==.*(?:\n|$)', re.MULTILINE)
 HEAP_MEASUREMENT = re.compile(r'^mem_heap_B=(\d+)$', re.MULTILINE)
-# Google Test prints this only when exactly one selected test ran and passed.
 ONE_TEST_PASSED = '[  PASSED  ] 1 test.'
 
 

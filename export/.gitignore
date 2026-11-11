@@ -1,6 +1,5 @@
 # Build output
 /build/
-/export/
 
 # Python caches
 __pycache__/

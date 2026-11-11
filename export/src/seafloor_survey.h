@@ -23,15 +23,7 @@ private:
 
   /* END - TOY STORAGE */
 
-  /* BEGIN EXAMPLE - ADD YOUR OWN DATA MEMBER
+  // int discoveriesRecorded = 0; // EXAMPLE - DATA MEMBER
 
-  int discoveriesRecorded = 0;
-
-  END EXAMPLE - ADD YOUR OWN DATA MEMBER */
-
-  /* BEGIN EXAMPLE - ADD YOUR OWN MEMBER FUNCTION
-
-  bool hasDebris() const;
-
-  END EXAMPLE - ADD YOUR OWN MEMBER FUNCTION */
+  // bool hasDebris() const; // EXAMPLE - MEMBER FUNCTION
 };

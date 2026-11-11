@@ -10,9 +10,7 @@
 #include "mothership.h"
 #include "seafloor_survey.h"
 
-/* BEGIN EXAMPLE - INCLUDE YOUR OWN HEADER FILE
-#include "examples/robot_selector.h"
-END EXAMPLE */
+// #include "examples/robot_selector.h" // EXAMPLE - INCLUDER A HEADER FILE
 
 class Search
 {
@@ -32,16 +30,8 @@ private:
 
   SeafloorSurvey seafloorSurvey;
 
-  /* BEGIN EXAMPLE - ADD YOUR OWN DATA MEMBER
+  // int robotsExplored = 0; // EXAMPLE - ADD A DATA MEMBER
+  // RobotSelector robotSelector; // EXAMPLE - ""
 
-  int robotsExplored = 0;
-
-  END EXAMPLE - ADD YOUR OWN DATA MEMBER */
-
-  /* BEGIN EXAMPLE - ADD YOUR OWN MEMBER FUNCTION
-
-  bool isReachable(int robot) const;
-  RobotSelector robotSelector;
-
-  END EXAMPLE - ADD YOUR OWN MEMBER FUNCTION */
+  // bool isReachable(int robot) const; // EXAMPLE - ADD A MEMBER FUNCTION
 };

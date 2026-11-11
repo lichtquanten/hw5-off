@@ -1,68 +1,77 @@
-/* -------------------- EXAMPLE STRUCT -------------------- */
+/* -------------------- STRUCTS -------------------- */
 
 /*
-struct Robot {
-    int id;
-    double score;
+#include <string>
+
+struct Movie {
+    std::string title;
+    int year;
+};
+
+struct Task {
+    std::string name;
+    int priority;
+
+    bool operator<(const Task& other) const { // Needed by priority queue
+        return priority < other.priority;
+    }
+};
+
+struct Contact {
+    std::string name;
+    std::string phone;
 };
 */
 
-
-/* -------------------- VECTOR / ARRAYLIST -------------------- */
+/* -------------------- VECTOR -------------------- */
 
 /*
 #include <vector>
 #include <iostream>
 
-// Numbers
-std::vector<int> values{10, 20, 30};
-values.push_back(40);
-values[0] = 15;
-int value = values.at(1);         // Bounds-checked access.
+std::vector<Movie> movies;
+movies.push_back(Movie{"Snowpiercer", 2013});
+movies.push_back(Movie{"Parasite", 2019});
 
-for (int value : values) {
-    std::cout << value << '\n';
-}
+movies[1] = Movie{"Okja", 2017};
+Movie second = movies.at(1);
+Movie first = movies.front();
+Movie last = movies.back();
 
-values.erase(values.begin());    // Remove the first element.
-values.pop_back();               // Remove the last element.
+for (const Movie& movie : movies) {
+    std::cout << movie.title << " (" << movie.year << ")\n";
+} // Prints Snowpiercer, Okja, Mother
 
-// Structs
-std::vector<Robot> robots{{1, 10.0}, {2, 20.0}};
-robots.push_back(Robot{3, 30.0});
-robots[0].score = 15.0;
-
-for (const Robot& robot : robots) {
-    std::cout << robot.id << ' ' << robot.score << '\n';
-}
+movies.pop_back();
+movies.erase(movies.begin());
 */
 
-
-/* -------------------- DOUBLY LINKED LIST -------------------- */
+/* -------------------- LINKED LIST -------------------- */
 
 /*
 #include <list>
 #include <algorithm>
 #include <iostream>
 
-std::list<int> values{10, 20, 30};
-values.push_front(5);
-values.push_back(40);
+std::list<Movie> watchlist;
+watchlist.push_back(Movie{"Parasite", 2019});
+watchlist.push_front(Movie{"Snowpiercer", 2013});
 
-auto it = std::find(values.begin(), values.end(), 20);
-if (it != values.end()) {
-    values.insert(it, 15);        // Insert before 20.
-    values.erase(it);            // Remove 20.
+auto it = std::find_if(watchlist.begin(), watchlist.end(), [](const Movie& movie) {
+    return movie.title == "Parasite";
+});
+if (it != watchlist.end()) {
+    watchlist.insert(it, Movie{"Mother", 2009});   // Inserts before Parasite.
+    watchlist.erase(it);                          // Removes Parasite.
 }
 
-for (int value : values) {
-    std::cout << value << '\n';
-}
+for (const Movie& movie : watchlist) {
+    std::cout << movie.title << " (" << movie.year << ")\n";
+} // Prints Snowpiercer, Mother
 
-values.pop_front();
-values.pop_back();
+watchlist.pop_front();
+watchlist.pop_back();
 */
-
 
 /* -------------------- STACK -------------------- */
 
@@ -70,23 +79,17 @@ values.pop_back();
 #include <stack>
 #include <iostream>
 
-std::stack<int> values;
-values.push(10);
-values.push(20);
-values.push(30);
+std::stack<Movie> recently_watched;
+recently_watched.push(Movie{"Snowpiercer", 2013});
+recently_watched.push(Movie{"Parasite", 2019});
+recently_watched.push(Movie{"Mother", 2009});
 
-while (!values.empty()) {
-    int value = values.top();     // 30, then 20, then 10.
-    values.pop();                // No return value.
-    std::cout << value << '\n';
-}
-
-std::stack<Robot> robots;
-robots.push(Robot{1, 10.0});
-Robot robot = robots.top();
-robots.pop();
+while (!recently_watched.empty()) {
+    Movie movie = recently_watched.top();
+    recently_watched.pop();
+    std::cout << movie.title << " (" << movie.year << ")\n";
+} // Prints Mother, Parasite, Snowpiercer
 */
-
 
 /* -------------------- QUEUE -------------------- */
 
@@ -94,217 +97,85 @@ robots.pop();
 #include <queue>
 #include <iostream>
 
-std::queue<int> values;
-values.push(10);
-values.push(20);
-values.push(30);
+std::queue<Movie> watch_next;
+watch_next.push(Movie{"Snowpiercer", 2013});
+watch_next.push(Movie{"Parasite", 2019});
+watch_next.push(Movie{"Mother", 2009});
 
-while (!values.empty()) {
-    int value = values.front();   // 10, then 20, then 30.
-    values.pop();                // No return value.
-    std::cout << value << '\n';
-}
-
-std::queue<Robot> robots;
-robots.push(Robot{1, 10.0});
-Robot robot = robots.front();
-robots.pop();
+while (!watch_next.empty()) {
+    Movie movie = watch_next.front();
+    watch_next.pop();
+    std::cout << movie.title << " (" << movie.year << ")\n";
+} // Prints Snowpiercer, Parasite, Mother
 */
 
-
-/* -------------------- HEAP / PRIORITY QUEUE -------------------- */
+/* -------------------- PRIORITY QUEUE / HEAP -------------------- */
 
 /*
 #include <queue>
-#include <vector>
 #include <iostream>
 
-// Numbers: max-heap
-std::priority_queue<int> max_heap;
-max_heap.push(10);
-max_heap.push(20);
-max_heap.push(30);
+std::priority_queue<Task> todo;
+todo.push(Task{"email", 2});
+todo.push(Task{"taxes", 3});
+todo.push(Task{"laundry", 1});
 
-while (!max_heap.empty()) {
-    std::cout << max_heap.top() << '\n'; // 30, then 20, then 10.
-    max_heap.pop();              // No return value.
-}
-
-// Structs: highest score first
-struct CompareByScore {
-    bool operator()(const Robot& a, const Robot& b) const {
-        return a.score < b.score;
-    }
-};
-
-std::priority_queue<Robot, std::vector<Robot>, CompareByScore> robots;
-robots.push(Robot{1, 10.0});
-robots.push(Robot{2, 20.0});
-Robot robot = robots.top();       // Robot 2.
-robots.pop();
+while (!todo.empty()) {
+    Task task = todo.top();
+    todo.pop();
+    std::cout << task.name << ' ' << task.priority << '\n';
+} // Prints taxes, email, then laundry
 */
 
-
-/* -------------------- MAP (UNORDERED) -------------------- */
+/* -------------------- MAP / TREES -------------------- */
 
 /*
 #include <unordered_map>
+#include "trees.h"
 #include <iostream>
 
-std::unordered_map<int, Robot> robots; // ID -> Robot.
-robots[1] = Robot{1, 10.0};        // Insert or replace.
-robots[2] = Robot{2, 20.0};
-robots.at(1).score = 15.0;         // Throws if the key is missing.
+std::unordered_map<std::string, Contact> contacts;   // Hash table
+// AVLMap<std::string, Contact> contacts;            // AVL tree
+// SplayMap<std::string, Contact> contacts;          // Splay tree
 
-auto it = robots.find(2);
-if (it != robots.end()) {
-    std::cout << it->second.score << '\n';
+Contact alice{"Alice", "323-3232"};
+Contact bob{"Bob", "434-4343"};
+contacts[alice.name] = alice;
+contacts[bob.name] = bob;
+contacts.at("Alice").phone = "212-2121";
+
+auto it = contacts.find("Bob");
+if (it != contacts.end()) {
+    std::cout << it->second.phone << '\n';
 }
 
-for (const auto& [id, robot] : robots) { // Unspecified order.
-    std::cout << id << ' ' << robot.score << '\n';
+for (const auto& [name, contact] : contacts) {
+    std::cout << name << ' ' << contact.phone << '\n';
 }
 
-robots.erase(2);
-// Reading robots[id] also inserts an entry if id is missing.
+contacts.erase("Bob");
 */
 
-
-/* -------------------- MAP (ORDERED) -------------------- */
-
-/*
-#include <map>
-#include <iostream>
-
-std::map<int, Robot> robots;       // ID -> Robot.
-robots[1] = Robot{1, 10.0};        // Insert or replace.
-robots[2] = Robot{2, 20.0};
-robots.at(1).score = 15.0;         // Throws if the key is missing.
-
-auto it = robots.find(2);
-if (it != robots.end()) {
-    std::cout << it->second.score << '\n';
-}
-
-for (const auto& [id, robot] : robots) { // Ascending ID order.
-    std::cout << id << ' ' << robot.score << '\n';
-}
-
-robots.erase(2);
-// Reading robots[id] also inserts an entry if id is missing.
-*/
-
-
-/* -------------------- SET (UNORDERED) -------------------- */
+/* -------------------- SET / TREES -------------------- */
 
 /*
 #include <unordered_set>
-#include <iostream>
-
-std::unordered_set<int> values{10, 20, 30};
-values.insert(40);
-values.insert(10);                // Duplicate ignored.
-
-bool found = values.find(20) != values.end();
-
-for (int value : values) {        // Unspecified order.
-    std::cout << value << '\n';
-}
-
-values.erase(20);
-*/
-
-
-/* -------------------- SET (ORDERED) -------------------- */
-
-/*
-#include <set>
-#include <iostream>
-
-// Numbers
-std::set<int> values{10, 20, 30};
-values.insert(40);
-bool found = values.find(20) != values.end();
-
-auto it = values.lower_bound(25); // First value >= 25.
-if (it != values.end()) {
-    std::cout << *it << '\n';     // 30.
-}
-
-for (int value : values) {        // Ascending order.
-    std::cout << value << '\n';
-}
-values.erase(20);
-
-// Structs: ordered by ID
-struct CompareById {
-    bool operator()(const Robot& a, const Robot& b) const {
-        return a.id < b.id;
-    }
-};
-
-std::set<Robot, CompareById> robots;
-robots.insert(Robot{1, 10.0});
-robots.insert(Robot{2, 20.0});
-auto robot_it = robots.find(Robot{2, 0.0}); // Score is ignored.
-
-// IDs determine uniqueness. Erase and reinsert to change an element.
-*/
-
-
-/* -------------------- AVL TREE -------------------- */
-
-/*
 #include "trees.h"
 #include <iostream>
 
-// Set
-AVLSet<int> values{10, 20, 30};
-values.insert(40);
-bool found = values.find(20) != values.end();
+std::unordered_set<std::string> usernames;   // Hash table
+// AVLSet<std::string> usernames;            // AVL tree
+// SplaySet<std::string> usernames;          // Splay tree
 
-for (int value : values) {        // Ascending order.
-    std::cout << value << '\n';
+usernames.insert("alice");
+usernames.insert("bob");
+usernames.insert("alice");   // No change
+
+bool taken = usernames.find("bob") != usernames.end();
+
+for (const std::string& name : usernames) {
+    std::cout << name << '\n';
 }
-values.erase(20);
 
-// Map
-AVLMap<int, Robot> robots;
-robots[1] = Robot{1, 10.0};
-robots[2] = Robot{2, 20.0};
-robots.at(1).score = 15.0;
-
-for (const auto& [id, robot] : robots) {
-    std::cout << id << ' ' << robot.score << '\n';
-}
-robots.erase(2);
-*/
-
-
-/* -------------------- SPLAY TREE -------------------- */
-
-/*
-#include "trees.h"
-#include <iostream>
-
-// Set
-SplaySet<int> values{10, 20, 30};
-values.insert(40);
-bool found = values.find(20) != values.end();
-
-for (int value : values) {        // Ascending order.
-    std::cout << value << '\n';
-}
-values.erase(20);
-
-// Map
-SplayMap<int, Robot> robots;
-robots[1] = Robot{1, 10.0};
-robots[2] = Robot{2, 20.0};
-robots.at(1).score = 15.0;
-
-for (const auto& [id, robot] : robots) {
-    std::cout << id << ' ' << robot.score << '\n';
-}
-robots.erase(2);
+usernames.erase("bob");
 */

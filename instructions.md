@@ -100,17 +100,26 @@ Look at `src/examples/using_data_structures.cpp`. You will find examples of how 
 
 # Building Off of the Code
 
-
 ## Starter Code
 
-- `src/search.h: Search class performs the search. Interacts with the mothership re robots. 
-- `src/search.cpp: The search object receives a mothership can performs a search. The findShipwreck function is what does the serach.
-- `src/mothership.h: Mothership class controls the robots, includign setting hte active robot, drivin geh robot forward, and reporting on anything fond.
-- src/seafloor_survey.h/.cpp: Exampe of a class that keeps track of debris that's been found. Not htat useful rn.
+The `Search` class decides where to search. The `Mothership` controls the robots. The `Search` class uses the `Mothership class
 
-Throughout the starter code, there are various "TOY" pieces of code. This toy code is not very good or defensible and should liekly be replaced. It shows one possible approach, but not a good one.
+- `src/search.h` and `src/search.cpp`: This is where you develop your search heuristic. `findShipwreck()` chooses which robot to drive, responds to what it finds, and decides when the search is finished.
+- `src/mothership.h`: Your search uses the mothership to switch robots, drive a robot forward, and learn what it found. The mothership also gives you the robots' current positions and the abyss positions. You do not need to implement any of this; it is provided for you.
+- `src/seafloor_survey.h` and `src/seafloor_survey.cpp`: An example of keeping track of debris so your search can use it to calculate signal strength. You can edit, replace, or delete this class.
+- `src/trees.h`: Lets you use AVL and splay trees in your solution, as shown in `src/examples/using_data_structures.cpp`.
 
-The code for running against specific scenarios etc is not visible.
+Keep the `Search` class name, its constructor, and the return type and name of `findShipwreck()`. Keep its `Mothership` reference too. Otherwise, you can add or change its members. Do not edit `mothership.h`.
+
+When your search finds the shipwreck, return its location as `Location{robot, segment}`. If no reachable segments remain to search, return `std::nullopt` to report that the shipwreck is not findable.
+
+## Toy Code
+
+Pieces of the starter code are marked as "TOY". These toy approaches are basic. You should replace the toy code with code that supports your search heuristic and makes effective use of data structures.
+
+`SeafloorSurvey`, in `src/seafloor_survey.{h,cpp}`, offers an example of storing debris in a class outside of `Search`. You can use or not use this class and can make any changes you like to it.
+
+You do not need to write your own `main()`. `make smoke-test` and `make test` take care of running your `Search` class against search scenarios.
 
 # Adding classes, files
 

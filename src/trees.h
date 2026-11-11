@@ -10,10 +10,8 @@
     - SplayMap<KeyType, ValueType>
 */
 
-/* Example uses: */
+//   AVLSet<int> visited; // EXAMPLE
+//   SplaySet<int> visited; // EXAMPLE
 
-//   AVLSet<int> positions;
-//   SplaySet<int> visited;
-
-//   AVLMap<int, double> scores;
-//   SplayMap<int, double> signals;
+//   AVLMap<std::string, double> scores; // EXAMPLE
+//   SplayMap<std::string, double> scores; // EXAMPLE

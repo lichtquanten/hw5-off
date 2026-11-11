@@ -6,14 +6,13 @@
 
 Search::Search(Mothership &mothership)
     : mothership(mothership)
-// , robotSelector(mothership, seafloorSurvey) /* EXAMPLE - INITIALIZE A DATA MEMBER */
+// , robotSelector(mothership, seafloorSurvey) /* EXAMPLE
 {
 }
 
 std::optional<Location> Search::findShipwreck()
 {
-  /* BEGIN - TOY APPROACH - DFS (CHANGE OR REPLACE) */
-
+  /* TOY APPROACH - Depth First Search - (CHANGE OR REPLACE) */
   for (int robot = 0; robot < ROBOT_COUNT; ++robot)
   {
     const int lastSegment = mothership.getAbysses()[robot] - 1;
@@ -40,5 +39,4 @@ std::optional<Location> Search::findShipwreck()
   }
 
   return std::nullopt;
-  /* END - TOY APPROACH*/
 }

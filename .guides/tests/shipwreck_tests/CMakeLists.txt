@@ -1,6 +1,7 @@
-file(GLOB STUDENT_SOURCES "${HW_DIR}/src/*.cpp")
+file(GLOB_RECURSE STUDENT_SOURCES "${HW_DIR}/src/*.cpp")
 add_library(hw5_shipwreck STATIC ${STUDENT_SOURCES})
 target_include_directories(hw5_shipwreck PUBLIC "${HW_DIR}/src")
+target_include_directories(hw5_shipwreck SYSTEM PUBLIC "${HW_DIR}/.guides/third_party")
 target_compile_definitions(hw5_shipwreck PUBLIC main=disabled_main)
 
 add_library(shipwreck_simulator STATIC
@@ -8,6 +9,7 @@ add_library(shipwreck_simulator STATIC
     "${HW_DIR}/.guides/support/simulated_robot.cpp"
     "${HW_DIR}/.guides/support/simulated_mothership.cpp")
 target_include_directories(shipwreck_simulator PUBLIC "${HW_DIR}/src" "${HW_DIR}/.guides/support")
+target_include_directories(shipwreck_simulator SYSTEM PUBLIC "${HW_DIR}/.guides/third_party")
 
 add_executable(shipwreck_tests basic_tests.cpp)
 target_link_libraries(shipwreck_tests PRIVATE hw5_shipwreck shipwreck_simulator shipwreck_gtest_main)

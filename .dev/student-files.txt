@@ -1,8 +1,10 @@
 .gitignore
 Makefile
 src/mothership.h
-src/robot_selector.cpp
-src/robot_selector.h
+src/examples/robot_selector.cpp
+src/examples/robot_selector.h
+src/examples/using_data_structures.cpp
+src/trees.h
 src/seafloor_survey.cpp
 src/seafloor_survey.h
 src/search.cpp
@@ -16,7 +18,6 @@ src/search.h
 .guides/support/simulated_robot.cpp
 .guides/support/simulated_robot.h
 .guides/tests/CMakeLists.txt
-.guides/tests/README.md
 .guides/tests/check.py
 .guides/tests/references/instructor/bin/shipwreck_reference
 .guides/tests/references/round_robin/bin/shipwreck_reference
@@ -32,3 +33,4 @@ src/search.h
 .guides/tests/shipwreck_tests/performance_tests.cpp
 .guides/tests/shipwreck_tests/search_test_fixture.h
 .guides/tests/GoogleTest.cmake
+.guides/third_party

@@ -19,7 +19,11 @@ def main() -> int:
                 raise ValueError('Not a student deliverable: ' + name)
             target = destination / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(WORKSPACE / name, target)
+            source = WORKSPACE / name
+            if source.is_dir():
+                shutil.copytree(source, target)
+            else:
+                shutil.copy2(source, target)
     except (OSError, ValueError) as error:
         print('Student export failed: ' + str(error), file=sys.stderr)
         return 1

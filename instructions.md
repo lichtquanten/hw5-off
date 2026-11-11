@@ -47,6 +47,8 @@ A heuristic is "an algorithmic approach that utilizes human expert knowledge to 
 
 Consider the data structures you have learned thus far in the course:
 
+Look at `src/examples/using_data_structures.cpp`. You will find examples of how you can use each of these data structures.
+
   - Linked list Stack
   - Queue
   - ArrayLists

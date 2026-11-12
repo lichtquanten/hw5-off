@@ -32,11 +32,13 @@ def profile_peak_memory(executable: Path, test: TestDefinition, report: Path, lo
 
 
 class CheckRunner:
-    def __init__(self, selection: Optional[TestDefinition] = None):
+    def __init__(self, selection: Optional[TestDefinition] = None, project: Optional[Path] = None):
         self.selection = selection
-        self.log_path = BUILD_DIRECTORY / 'check.log'
-        tests = BUILD_DIRECTORY / 'shipwreck_tests'
-        references = TEST_SUITE / 'references'
+        self.test_suite = TEST_SUITE if project is None else project / '.support/tests'
+        self.build_directory = self.test_suite.parents[1] / 'build/tests'
+        self.log_path = self.build_directory / 'check.log'
+        tests = self.build_directory / 'shipwreck_tests'
+        references = self.test_suite / 'references'
         self.reference_profiles = references / 'massif'
         self.basic_tests = tests / 'shipwreck_tests'
         self.performance_tests = {
@@ -57,14 +59,14 @@ class CheckRunner:
 
     def build_tests(self) -> None:
         print('Building tests...', flush=True)
-        BUILD_DIRECTORY.mkdir(parents=True, exist_ok=True)
+        self.build_directory.mkdir(parents=True, exist_ok=True)
         configure = run_process([
-            'cmake', '-H' + str(TEST_SUITE), '-B' + str(BUILD_DIRECTORY), '-G', 'Unix Makefiles',
+            'cmake', '-H' + str(self.test_suite), '-B' + str(self.build_directory), '-G', 'Unix Makefiles',
         ])
         if configure.returncode:
             raise CheckError('Cannot configure the tests:\n' + configure.output)
-        build = run_process(['cmake', '--build', str(BUILD_DIRECTORY), '--', '-j2'])
-        log = BUILD_DIRECTORY / 'check-build.log'
+        build = run_process(['cmake', '--build', str(self.build_directory), '--', '-j2'])
+        log = self.build_directory / 'check-build.log'
         write_process_log(log, '', configure.output + build.output, append=False)
         if build.returncode:
             raise BuildError('Build failed:\n' + build.output)
@@ -96,7 +98,7 @@ class CheckRunner:
         try:
             process = run_process(
                 [*command, '--gtest_filter=' + test.full_name],
-                BUILD_DIRECTORY, TEST_TIMEOUT_SECONDS,
+                self.build_directory, TEST_TIMEOUT_SECONDS,
             )
         except ProcessError as error:
             write_process_log(self.log_path, heading, error.output + '\n' + str(error))
@@ -110,7 +112,7 @@ class CheckRunner:
             return
         print('Profiling memory...', flush=True)
         for result in targets:
-            report = BUILD_DIRECTORY / 'massif' / f'Yours.{result.test.full_name}.out'
+            report = self.build_directory / 'massif' / f'Yours.{result.test.full_name}.out'
             try:
                 result.peak_memory_bytes = profile_peak_memory(
                     self.performance_tests['Yours'], result.test, report, self.log_path)

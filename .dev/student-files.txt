@@ -1,7 +1,0 @@
-.gitignore
-Makefile
-src
-.guides/secure/grade.py
-.guides/support
-.guides/tests
-.guides/third_party

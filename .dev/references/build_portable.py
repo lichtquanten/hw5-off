@@ -6,7 +6,7 @@ import sys
 import tempfile
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-TEST_SUITE = WORKSPACE / '.guides/tests'
+TEST_SUITE = WORKSPACE / 'hw5/.support/tests'
 
 
 VERSIONS = ('18.04', '20.04')
@@ -45,7 +45,7 @@ def main():
             destination = output / name
             destination.mkdir(parents=True)
             mounts += ['--mount', 'type=bind,src=' + str(destination)
-                       + ',dst=/workspace/.guides/tests/references/' + name + '/bin']
+                       + ',dst=/workspace/hw5/.support/tests/references/' + name + '/bin']
         print('Building references with Ubuntu 18.04 libraries...', flush=True)
         run(['docker', 'run', '--rm', '--platform', 'linux/amd64',
              '--user', str(os.getuid()) + ':' + str(os.getgid()), *mounts,

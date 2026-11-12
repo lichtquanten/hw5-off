@@ -3,7 +3,7 @@ import shutil
 import sys
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-TEST_SUITE = WORKSPACE / '.guides/tests'
+TEST_SUITE = WORKSPACE / 'hw5/.support/tests'
 sys.path.insert(0, str(TEST_SUITE))
 
 from runner.processes import CheckError, ProcessError, run_process, write_process_log

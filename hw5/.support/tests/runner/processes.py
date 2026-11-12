@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import subprocess
 import time
@@ -34,6 +35,7 @@ def run_process(
         process = subprocess.run(
             arguments,
             cwd=working_directory,
+            env={name: value for name, value in os.environ.items() if not name.startswith('CODIO_')},
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,

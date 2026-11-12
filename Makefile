@@ -1,22 +1,21 @@
-CXX := g++
-CXXFLAGS := -std=c++17 -g -O2 -Wall -Wextra -I src -isystem .guides/third_party
+WORKSPACE := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+.DEFAULT_GOAL := export
 
-# Every .cpp file under src/ is compiled recursively. Headers need no entry.
-SOURCES := .guides/support/main.cpp .guides/support/scenario.cpp \
-           .guides/support/simulated_robot.cpp .guides/support/simulated_mothership.cpp \
-           $(sort $(shell find src -type f -name '*.cpp'))
+.PHONY: export references reference-memory-profiles
 
-all:
-	mkdir -p build
-	$(CXX) $(CXXFLAGS) $(SOURCES) -o build/shipwreck
+export: references
+	@$(MAKE) -C "$(WORKSPACE)/hw5" clean
+	@find "$(WORKSPACE)/.guides/secure" -type d -name __pycache__ -prune -exec rm -rf {} +
+	@rm -rf "$(WORKSPACE)/.guides/secure/.support"
+	@cp -a "$(WORKSPACE)/hw5/.support" "$(WORKSPACE)/.guides/secure/.support"
+	@cp "$(WORKSPACE)/hw5/mothership.h" "$(WORKSPACE)/.guides/secure/.support/mothership.h"
+	@python3 -B "$(WORKSPACE)/.dev/test_grading.py"
+	@python3 -B "$(WORKSPACE)/.dev/test_submission.py"
+	@printf 'Student project ready: %s\n' "$(WORKSPACE)/hw5"
 
-smoke-test: all
-	./build/shipwreck
+references:
+	@python3 "$(WORKSPACE)/.dev/references/build_portable.py"
+	@$(MAKE) -f "$(WORKSPACE)/Makefile" reference-memory-profiles
 
-test:
-	@python3 .guides/tests/check.py
-
-clean:
-	rm -rf build
-
-.PHONY: all smoke-test test clean
+reference-memory-profiles:
+	@python3 "$(WORKSPACE)/.dev/references/profile_memory.py"

@@ -1,6 +1,7 @@
 from contextlib import redirect_stdout
 import importlib.util
 import io
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -9,12 +10,12 @@ from unittest.mock import patch
 
 
 WORKSPACE = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(WORKSPACE / '.guides/tests'))
+sys.path.insert(0, str(WORKSPACE / 'hw5/.support/tests'))
 
 from runner.catalog import TESTS
 from runner.execution import CheckRunner
 from runner.output import format_count, format_memory, print_results
-from runner.processes import BuildError, ProcessResult
+from runner.processes import BuildError, ProcessResult, run_process
 from runner.results import TestResult, calculate_grade, parse_result
 
 
@@ -41,6 +42,15 @@ def render(results):
 
 
 class GradingTests(unittest.TestCase):
+    def test_child_processes_do_not_inherit_codio_grading_endpoints(self):
+        with patch.dict(os.environ, {'CODIO_AUTOGRADE_V2_URL': 'private-grade-url',
+                                    'HW5_TEST_ENV': 'preserved'}):
+            process = run_process([
+                sys.executable, '-c', 'import os; print(os.environ.get("CODIO_AUTOGRADE_V2_URL", "absent")); '
+                'print(os.environ["HW5_TEST_ENV"])',
+            ])
+        self.assertEqual(process.output.splitlines(), ['absent', 'preserved'])
+
     def test_each_limit_is_strict_and_missing_measurements_cannot_pass(self):
         test = LIMITED_TEST
         for attribute, limit in (
@@ -148,7 +158,7 @@ class GradingTests(unittest.TestCase):
         results[8].runtime_seconds = results[8].test.max_runtime_seconds
         with patch.object(grade, 'CheckRunner') as runner:
             runner.return_value.run.return_value = results
-            score, feedback = grade.evaluate()
+            score, feedback = grade.evaluate_solution(WORKSPACE / 'hw5')
         self.assertEqual(score, calculate_grade(results))
         self.assertEqual(feedback, render(results))
 
@@ -195,7 +205,7 @@ class GradingTests(unittest.TestCase):
     def test_build_failure_returns_zero(self):
         with patch.object(grade, 'CheckRunner') as runner:
             runner.return_value.run.side_effect = BuildError('Compiler error.')
-            score, feedback = grade.evaluate()
+            score, feedback = grade.evaluate_solution(WORKSPACE / 'hw5')
         self.assertEqual(score, 0)
         self.assertIn('could not build', feedback)
 

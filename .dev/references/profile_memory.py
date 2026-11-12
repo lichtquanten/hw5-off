@@ -3,7 +3,7 @@ import sys
 
 
 WORKSPACE = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(WORKSPACE / '.guides/tests'))
+sys.path.insert(0, str(WORKSPACE / 'hw5/.support/tests'))
 
 from runner.catalog import TESTS
 from runner.execution import BUILD_DIRECTORY, TEST_SUITE, profile_peak_memory

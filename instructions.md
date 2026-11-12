@@ -101,15 +101,15 @@ Consider the data structures you have learned thus far in the course:
 - AVL tree
 - Splay tree
 
-Look at `src/examples/using_data_structures.cpp`. You will find examples of how you can use each of these data structures should any seem useful in the assignment.
+Look at `hw5/examples/using_data_structures.cpp`. You will find examples of how you can use each of these data structures should any seem useful in the assignment.
 
 # Building Off of the Code
 
 ## Starter Code
 
-- `src/search.{h,cpp}`: Provides the `Search` class, which performs the search in `findShipwreck()` and uses `Mothership` to control the robots.
-- `src/mothership.h`: Provides the `Mothership` class to switch robots, drive them, and report what they find. Also provides robot and abyss positions, and constants for robot count, tether length, drive limit, switching cost, and signal range. [DO NOT EDIT]
-- `src/seafloor_survey.{h,cpp}`: Provides the `SeafloorSurvey` class for storing debris discoveries and computing signal strength. [OPTIONAL]
+- `hw5/search.{h,cpp}`: Provides the `Search` class, which performs the search in `findShipwreck()` and uses `Mothership` to control the robots.
+- `hw5/mothership.h`: Provides the `Mothership` class to switch robots, drive them, and report what they find. Also provides robot and abyss positions, and constants for robot count, tether length, drive limit, switching cost, and signal range. [DO NOT EDIT]
+- `hw5/seafloor_survey.{h,cpp}`: Provides the `SeafloorSurvey` class for storing debris discoveries and computing signal strength. [OPTIONAL]
 
 ## Editing Code
 
@@ -117,7 +117,9 @@ Implement your search in `findShipwreck()`. Return `SearchResult`.
 Set `isFound` to `true` and fill in `location` when the shipwreck is found.
 Otherwise, return `SearchResult{false, Location{}}`. The `location` field is ignored when `isFound` is `false`.
 
-You can add any data members or member functions to the `Search` class. You will likely want to add more classes and files. You do not need to update the Makefile when adding files to `src`. The Makefile is already configured to find `.cpp` and `.h` files in `src/`.
+You can add any data members or member functions to the `Search` class. You will likely want to add more classes and files. You do not need to update the Makefile when adding files to `hw5`. The Makefile is already configured to find `.cpp` files in `hw5/`.
+
+Leave the provided `hw5/.support/` directory unchanged.
 
 You do not need to write your own `main()`. `make smoke-test` and `make test` take care of running your `Search` class against search scenarios.
 
@@ -126,9 +128,11 @@ You do not need to write your own `main()`. `make smoke-test` and `make test` ta
 
 Pieces of the starter code are marked as "TOY". These toy approaches are basic. You should replace the toy code with code that supports your search heuristic and makes effective use of data structures.
 
-`SeafloorSurvey`, in `src/seafloor_survey.{h,cpp}`, offers an example of recording found debris outside the `Search` class. You can use this class or not, and you can make any changes to the class, as well.
+`SeafloorSurvey`, in `hw5/seafloor_survey.{h,cpp}`, offers an example of recording found debris outside the `Search` class. You can use this class or not, and you can make any changes to the class, as well.
 
 ## Running Tests
+
+Run the following commands from inside `hw5/`.
 
 To run a quick check for correctness:
 

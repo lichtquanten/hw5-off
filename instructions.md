@@ -142,7 +142,7 @@ To run the full test suite, including correctness and performance tests:
 make test
 ```
 
-The full test suite may take up to 5 minutes or so to run.
+The full test suite may take up to a minute or so to run.
 
 The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution.
 

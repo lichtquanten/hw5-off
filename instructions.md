@@ -4,11 +4,13 @@ You must find a shipwreck on the ocean floor!
 
 <image>
 
-A ship sank to the ocean floor a long time ago. You on a mothership, with 100 underwater robots to use for the search.
+A ship sank to the ocean floor a long time ago. You're on a mothership, with 100 underwater robots to use for the search.
 
 As the ship sank, it scattered debris along the seafloor. The debris can be used to aid the search.
 
 Your goal is to find the shipwreck, or to report that the shipwreck is not findable.
+
+# Search
 
 ## Robots
 
@@ -33,6 +35,8 @@ Each robot is attached to the mothership by a tether of length 10 million segmen
 
 Robots may encounter abysses. Abysses are deep openings in the ground. Driving into an abyss causes failure. You are given a list of positions for the abysses at the start.
 
+You can request a drive of fewer than 100 segments, such as to avoid hitting an abyss.
+
 ## Debris and Signal Strength
 
 You expect that the shipwreck will be surrounded by debris. Since much time has passed since the sinking, though, debris will have been swept up and carried to areas away from the shipwreck.
@@ -40,12 +44,12 @@ You expect that the shipwreck will be surrounded by debris. Since much time has 
 You can reason about debris using a measure called signal strength. Signal strength predicts the likelihood of finding the shipwreck near a robot. Debris found nearby a robot adds to signal strength.
 
 For signal strength, “nearby” means:
-- within 500 segments of a robot, along its own path
-- within 500 segments of a robot, along the paths of the robots immediately to its left and right
+- within 500 segments ahead of or behind a robot, along its own path
+- within that same range of segment numbers, along the paths of the robots immediately to its left and right
 
-Each nearby segment of debris has been found contributes equally to signal strength, whether it is along a robot's own path or its neighbors' paths.
+Each nearby segment where debris has been found contributes equally to signal strength, whether it is along a robot's own path or its neighbors' paths.
 
-# Key Info
+## Key Info
 
 | Item | Value |
 | --- | --- |
@@ -56,9 +60,9 @@ Each nearby segment of debris has been found contributes equally to signal stren
 | Tether length | 10 million segments |
 | Signal range | Within 500 segments, along the robot's own path and its two neighboring paths |
 
-# Evaluation
+## Evaluation
 
-Your goal is to find the shipwreck, or to report that the shipwreck is not findable, while making defensible decisions as far as search heuristic and effective use of data structures.
+Your goal is to find the shipwreck, or to report that the shipwreck is not findable, using a defensible search heuristic and making effective use of data structures.
 
 The assignment will be evaluated on whether your solution finds the shipwreck or correctly reports that it is not findable.
 
@@ -68,11 +72,11 @@ The assignment will also be evaluated on:
 - runtime cost, i.e. how long in seconds it takes for the program to run
 - memory cost, i.e. how many bytes of memory the program uses at its peak.
 
-Your solution will be evaluated against a fix threshold for each of those criteria, as seen with `make test`. That said, there is no single optimal approach to this problem.
+Your solution will be evaluated against fixed thresholds for search time (ticks), runtime, and memory, as shown by `make test`. There are multiple reasonable approaches to this problem.
 
-# Developing Your Solution
+# Developing Your Approach
 
-You should try to find the shipwreck as quickly as possible, if it is findable. That said, this assignment makes use of heuristics, rather than mathematical formulas defining an optimal approach. A heuristic is a strategy intended to solve a problem efficiently, without guaranteeing the most efficient approach. You can use your judgment and intuition to come up with and justify heuristics.
+You should try to find the shipwreck as quickly as possible, if it is findable. That said, this assignment focuses on developing effective search heuristics rather than proving your strategy is mathematically optimal. Use your judgment and intuition to design and justify your approach.
 
 You have two key questions to consider:
 
@@ -106,13 +110,13 @@ Look at `src/examples/using_data_structures.cpp`. You will find examples of how 
 - `src/mothership.h`: Provides the `Mothership` class to switch robots, drive them, and report what they find. Also provides robot and abyss positions, and constants for robot count, tether length, drive limit, switching cost, and signal range. [DO NOT EDIT]
 - `src/seafloor_survey.{h,cpp}`: Provides the `SeafloorSurvey` class for storing debris discoveries and computing signal strength. [OPTIONAL, EDIT]
 
-# Editing Code
+## Editing Code
 
 Implement your search in `findShipwreck()`. Return `Location{robot, segment}` if the shipwreck is found, or `std::nullopt` if it is not findable.
 
-You can add any data members or member methods to the `Search` class. You will likely want to add more classes and files.
+You can add any data members or member functions to the `Search` class. You will likely want to add more classes and files.
 
-You do not need to update the Makefile when adding files to `src`. The Makefile is configured already to find `.ccp` and `.h` files in `src/`.
+You do not need to update the Makefile when adding files to `src`. The Makefile is already configured to find `.cpp` and `.h` files in `src/`.
 
 You do not need to write your own `main()`. `make smoke-test` and `make test` take care of running your `Search` class against search scenarios.
 
@@ -138,4 +142,4 @@ make test
 
 The full test suite may take up to 5 minutes or so to run.
 
-The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution. The round-robin solution advances each robot one after the other, without considering debris, until finding the shipwreck. We do not share how the instructor solution works - only its performance. The instructor solution uses defensible search heuristics and makes effective use of data structures. That said, you can outperform the instructor solution! It is one of many reasonable solutions, and there is no optimal solution to this problem.
+The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution. The round-robin solution advances each robot one after the other, without considering debris, until finding the shipwreck. We do not share how the instructor solution works - only its performance. The instructor solution uses defensible search heuristics and makes effective use of data structures. That said, you can outperform the instructor solution! It is one of many reasonable solutions.

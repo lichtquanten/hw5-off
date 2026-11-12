@@ -14,7 +14,7 @@ Your goal is to find the shipwreck, or to report that the shipwreck is not finda
 
 ## Robots
 
-The robots start evenly spaced in a circle around the mothership. Each robot moves in a straight line, radially out from the mothership.
+The search robots start evenly spaced in a circle around the mothership. Each robot moves in a straight line, radially out from the mothership.
 
 Each robot's path is divided into segments. Each segment takes 1 tick (a unit of time) to drive.
 
@@ -39,11 +39,11 @@ You can request a drive of fewer than 100 segments, such as to avoid hitting an 
 
 ## Debris & Signal Strength
 
-You expect that the shipwreck will be surrounded by debris. Since much time has passed since the sinking, though, debris will have been swept up and carried to areas away from the shipwreck.
+You expect that the shipwreck will have much debris surrounding it. Since much time has passed since the sinking, though, debris will have been swept up and carried to areas away from the shipwreck.
 
 You can reason about debris using a measure called signal strength. Signal strength predicts the likelihood of finding the shipwreck near a robot. Debris found nearby a robot adds to signal strength.
 
-For signal strength, “nearby” means:
+For signal strength, debris that is “nearby” includes:
 - within 500 segments ahead of or behind a robot, along its own path
 - within that same range of segment numbers, along the paths of the robots immediately to its left and right
 
@@ -61,12 +61,12 @@ The assignment will also be evaluated on:
 - runtime cost, i.e. how long in seconds it takes for the program to run
 - memory cost, i.e. how many bytes of memory the program uses at its peak.
 
-Your solution will be evaluated against fixed thresholds for search time (ticks), runtime, and memory, as shown by `make test`. There are multiple reasonable approaches to this problem.
+Your solution will be evaluated against fixed thresholds for search time (ticks), runtime, and memory, as shown by `make test`. That said, you can and should develop your program for efficiency beyond this fixed threshold!
 
 
 ## Summary Info
 
--  Num robots: 100
+- Num robots: 100
 - Speed: 1 segment/tick
 - Max distance per drive: 100 segments
 - Cost to switch robots: 10 ticks
@@ -75,7 +75,7 @@ Your solution will be evaluated against fixed thresholds for search time (ticks)
 
 # Developing Your Approach
 
-You should try to find the shipwreck as quickly as possible, if it is findable. That said, this assignment focuses on developing effective search heuristics rather than proving your strategy is mathematically optimal. Use your judgment and intuition to design and justify your approach.
+You should try to find the shipwreck as quickly as possible, if it is findable. You should ground your approach in your judgment/intuition and your understanding of what tradeoffs in efficient data storage + access allows. This assignment is not about coming up with a mathematically optimal approach, nor is that possible given the information provided.
 
 You have two key questions to consider:
 
@@ -111,13 +111,12 @@ Look at `src/examples/using_data_structures.cpp`. You will find examples of how 
 
 ## Editing Code
 
-Implement your search in `findShipwreck()`. Return `Location{robot, segment}` if the shipwreck is found, or `std::nullopt` if it is not findable.
+Implement your search in `findShipwreck()`. Return `SearchResult`.
 
-You can add any data members or member functions to the `Search` class. You will likely want to add more classes and files.
-
-You do not need to update the Makefile when adding files to `src`. The Makefile is already configured to find `.cpp` and `.h` files in `src/`.
+You can add any data members or member functions to the `Search` class. You will likely want to add more classes and files. You do not need to update the Makefile when adding files to `src`. The Makefile is already configured to find `.cpp` and `.h` files in `src/`.
 
 You do not need to write your own `main()`. `make smoke-test` and `make test` take care of running your `Search` class against search scenarios.
+
 
 ## Toy Code
 

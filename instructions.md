@@ -2,7 +2,7 @@
 
 You must find a shipwreck on the ocean floor!
 
-<image>
+
 
 A ship sank to the ocean floor a long time ago. You're on a mothership, with 100 underwater robots to use for the search.
 
@@ -37,7 +37,7 @@ Robots may encounter abysses. Abysses are deep openings in the ground. Driving i
 
 You can request a drive of fewer than 100 segments, such as to avoid hitting an abyss.
 
-## Debris and Signal Strength
+## Debris & Signal Strength
 
 You expect that the shipwreck will be surrounded by debris. Since much time has passed since the sinking, though, debris will have been swept up and carried to areas away from the shipwreck.
 
@@ -48,17 +48,6 @@ For signal strength, “nearby” means:
 - within that same range of segment numbers, along the paths of the robots immediately to its left and right
 
 Each nearby segment where debris has been found contributes equally to signal strength, whether it is along a robot's own path or its neighbors' paths.
-
-## Key Info
-
-| Item | Value |
-| --- | --- |
-| Number of robots | 100 |
-| Speed | 1 segment/tick |
-| Maximum distance per drive | 100 segments |
-| Cost to switch robots | 10 ticks |
-| Tether length | 10 million segments |
-| Signal range | Within 500 segments, along the robot's own path and its two neighboring paths |
 
 ## Evaluation
 
@@ -73,6 +62,16 @@ The assignment will also be evaluated on:
 - memory cost, i.e. how many bytes of memory the program uses at its peak.
 
 Your solution will be evaluated against fixed thresholds for search time (ticks), runtime, and memory, as shown by `make test`. There are multiple reasonable approaches to this problem.
+
+
+## Summary Info
+
+-  Num robots: 100
+- Speed: 1 segment/tick
+- Max distance per drive: 100 segments
+- Cost to switch robots: 10 ticks
+- Tether length: 10 million segments
+- Signal range: Within 500 segments, along the robot's own path and its two neighboring paths
 
 # Developing Your Approach
 
@@ -106,9 +105,9 @@ Look at `src/examples/using_data_structures.cpp`. You will find examples of how 
 
 ## Starter Code
 
-- `src/search.{h,cpp}`: Provides the `Search` class, which performs the search in `findShipwreck()` and uses `Mothership` to control the robots. [EDIT]
+- `src/search.{h,cpp}`: Provides the `Search` class, which performs the search in `findShipwreck()` and uses `Mothership` to control the robots.
 - `src/mothership.h`: Provides the `Mothership` class to switch robots, drive them, and report what they find. Also provides robot and abyss positions, and constants for robot count, tether length, drive limit, switching cost, and signal range. [DO NOT EDIT]
-- `src/seafloor_survey.{h,cpp}`: Provides the `SeafloorSurvey` class for storing debris discoveries and computing signal strength. [OPTIONAL, EDIT]
+- `src/seafloor_survey.{h,cpp}`: Provides the `SeafloorSurvey` class for storing debris discoveries and computing signal strength. [OPTIONAL]
 
 ## Editing Code
 
@@ -142,4 +141,8 @@ make test
 
 The full test suite may take up to 5 minutes or so to run.
 
-The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution. The round-robin solution advances each robot one after the other, without considering debris, until finding the shipwreck. We do not share how the instructor solution works - only its performance. The instructor solution uses defensible search heuristics and makes effective use of data structures. That said, you can outperform the instructor solution! It is one of many reasonable solutions.
+The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution.
+
+Round-robin solution: Advances each robot one after the other, without considering debris, until finding the shipwreck.
+
+Instructor solution: Implementation not shared but uses defensible search heuristics and makes effective use of data structures. It is one of many reasonable solutions. You can outperform the instructor solution!

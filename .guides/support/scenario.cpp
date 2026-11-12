@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <stdexcept>
-#include <tuple>
 
 void validateRobotIndex(int robotIndex)
 {
@@ -27,29 +26,6 @@ namespace
       throw std::out_of_range("Segment number is outside the valid range.");
     }
   }
-
-  void validateLocations(const std::vector<Location> &locations,
-                         const char *duplicateMessage)
-  {
-    for (Location location : locations)
-    {
-      validateLocation(location);
-    }
-
-    std::vector<Location> sorted(locations);
-    std::sort(sorted.begin(), sorted.end(), [](Location a, Location b)
-    {
-      return std::tie(a.robot, a.segment) < std::tie(b.robot, b.segment);
-    });
-
-    if (std::adjacent_find(sorted.begin(), sorted.end(), [](Location a, Location b)
-    {
-      return a.robot == b.robot && a.segment == b.segment;
-    }) != sorted.end())
-    {
-      throw std::invalid_argument(duplicateMessage);
-    }
-  }
 }
 
 void validateScenario(const Scenario &scenario)
@@ -61,7 +37,10 @@ void validateScenario(const Scenario &scenario)
       throw std::out_of_range("Abyss segment is outside the valid range.");
     }
   }
-  validateLocations(scenario.debris, "Duplicate debris location.");
+  for (Location debris : scenario.debris)
+  {
+    validateLocation(debris);
+  }
 
   if (!scenario.shipwreck)
   {

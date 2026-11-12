@@ -12,7 +12,7 @@ Search::Search(Mothership &mothership)
 {
 }
 
-std::optional<Location> Search::findShipwreck()
+SearchResult Search::findShipwreck()
 {
   /* TOY APPROACH - Depth First Search - (CHANGE OR REPLACE) */
   for (int robot = 0; robot < ROBOT_COUNT; ++robot)
@@ -33,7 +33,7 @@ std::optional<Location> Search::findShipwreck()
 
       if (result.reason == DriveStopReason::ShipwreckFound)
       {
-        return Location{robot, mothership.getRobotPosition(robot)};
+        return SearchResult{true, Location{robot, mothership.getRobotPosition(robot)}};
       }
 
       if (result.reason == DriveStopReason::DebrisFound)
@@ -43,5 +43,5 @@ std::optional<Location> Search::findShipwreck()
     }
   }
 
-  return std::nullopt;
+  return SearchResult{false, Location{}};
 }

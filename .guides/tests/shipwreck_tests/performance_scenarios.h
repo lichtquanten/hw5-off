@@ -3,58 +3,100 @@
 #include "scenario.h"
 
 #include <algorithm>
+#include <array>
 #include <random>
 #include <tuple>
 #include <utility>
 
 namespace shipwreck_tests
 {
-enum class DebrisPattern { Clustered, Misleading, WeakSignal, Sparse };
-enum class PathLayout { Uniform, Mixed };
-enum class WreckAvailability { Reachable, Unfindable };
+constexpr int CORE_RADIUS = 10'000;
+constexpr int OUTER_RADIUS = 50'000;
+constexpr int MIN_SITE_DEPTH = 20'000;
+constexpr int MAX_SITE_DEPTH = 60'000;
 
-struct DebrisDistribution
+struct DebrisStrength
 {
-    int wreckDensityDivisor = 10;
-    int decoyClusterCount = 3;
-    int decoyDensityDivisor = 16;
+    double coreProbability;
+    double outerProbability;
+
+    DebrisStrength scaled(double factor) const
+    {
+        return {coreProbability * factor, outerProbability * factor};
+    }
 };
 
-inline DebrisDistribution debrisDistribution(DebrisPattern pattern)
+struct ScenarioSettings
 {
-    DebrisDistribution distribution;
-    switch (pattern)
-    {
-    case DebrisPattern::Clustered:
-        break;
-    case DebrisPattern::Misleading:
-        distribution.decoyDensityDivisor = 5;
-        break;
-    case DebrisPattern::WeakSignal:
-        distribution.wreckDensityDivisor = 25;
-        break;
-    case DebrisPattern::Sparse:
-        distribution.wreckDensityDivisor = 60;
-        distribution.decoyClusterCount = 2;
-        distribution.decoyDensityDivisor = 50;
-        break;
-    }
-    return distribution;
+    int pathLength = 250'000;
+    double backgroundProbability = 0.001;
+    DebrisStrength targetDebris{0.04, 0.003};
+    std::array<DebrisStrength, 3> formerWreckDebris{{
+        {0.01, 0.0005}, {0.02, 0.001}, {0.03, 0.002},
+    }};
+};
+
+struct WreckSite
+{
+    Location center;
+    DebrisStrength debris;
+};
+
+inline int clusterOffset(std::mt19937& random, int radius)
+{
+    const int first = random() % (radius + 1);
+    const int second = random() % (radius + 1);
+    return first - second;
 }
 
-inline void addDebrisCluster(Scenario& scenario, std::mt19937& random,
-                            Location center, int radius, int sampleCount)
+inline std::vector<WreckSite> chooseWreckSites(
+    const ScenarioSettings& settings, std::optional<Location> targetCenter, std::mt19937& random)
 {
-    for (int sample = 0; sample < sampleCount; ++sample)
+    std::vector<WreckSite> sites;
+    if (targetCenter)
+        sites.push_back({*targetCenter, settings.targetDebris});
+    for (const auto& debris : settings.formerWreckDebris)
     {
-        const int neighborOffset = static_cast<int>(random() % 3) - 1;
-        const int neighbor = (center.robot + ROBOT_COUNT + neighborOffset) % ROBOT_COUNT;
-        const int segmentOffset = static_cast<int>(random() % (radius + 1)) -
-                                  static_cast<int>(random() % (radius + 1));
-        const int segment = center.segment + segmentOffset;
-        if (segment >= 1 && segment < scenario.abysses[neighbor])
-            scenario.debris.push_back({neighbor, segment});
+        const int robot = random() % ROBOT_COUNT;
+        const int segment = MIN_SITE_DEPTH + random() % (MAX_SITE_DEPTH - MIN_SITE_DEPTH + 1);
+        sites.push_back({{robot, segment}, debris});
     }
+    return sites;
+}
+
+inline void addBackgroundDebris(
+    Scenario& scenario, double probability, std::mt19937& random)
+{
+    for (int robot = 0; robot < ROBOT_COUNT; ++robot)
+    {
+        const int length = scenario.abysses[robot] - 1;
+        const int samples = static_cast<int>(length * probability);
+        for (int sample = 0; sample < samples; ++sample)
+            scenario.debris.push_back({robot, 1 + static_cast<int>(random() % length)});
+    }
+}
+
+inline void addClusterDebris(
+    Scenario& scenario, Location center, int radius, double peakProbability,
+    std::mt19937& random)
+{
+    const int samplesPerPath = static_cast<int>(radius * peakProbability);
+    for (int neighborOffset : {-1, 0, 1})
+    {
+        const int robot = (center.robot + ROBOT_COUNT + neighborOffset) % ROBOT_COUNT;
+        for (int sample = 0; sample < samplesPerPath; ++sample)
+        {
+            const int segment = center.segment + clusterOffset(random, radius);
+            if (segment >= 1 && segment < scenario.abysses[robot])
+                scenario.debris.push_back({robot, segment});
+        }
+    }
+}
+
+inline void addWreckDebris(Scenario& scenario, const WreckSite& site, std::mt19937& random)
+{
+    addClusterDebris(scenario, site.center, CORE_RADIUS, site.debris.coreProbability, random);
+    addClusterDebris(scenario, site.center, OUTER_RADIUS, site.debris.outerProbability, random);
 }
 
 inline void normalizeDebris(Scenario& scenario, std::mt19937& random)
@@ -78,67 +120,31 @@ inline void normalizeDebris(Scenario& scenario, std::mt19937& random)
 }
 
 inline Scenario makePerformanceScenario(
-    unsigned seed, int backgroundPerRobot, DebrisPattern pattern,
-    PathLayout layout = PathLayout::Uniform,
-    WreckAvailability wreckAvailability = WreckAvailability::Reachable,
-    int pathLength = TETHER_LENGTH,
-    std::optional<Location> wreckLocation = std::nullopt)
+    const ScenarioSettings& settings, unsigned seed,
+    std::optional<Location> targetCenter = std::nullopt)
 {
     std::mt19937 random(seed);
-    const auto pick = [&random](int count) { return static_cast<int>(random() % count); };
-    const DebrisDistribution distribution = debrisDistribution(pattern);
     Scenario scenario;
-    for (int robot = 0; robot < ROBOT_COUNT; ++robot)
+    scenario.abysses.fill(settings.pathLength + 1);
+    const auto sites = chooseWreckSites(settings, targetCenter, random);
+    std::size_t debrisCapacity = ROBOT_COUNT *
+        static_cast<std::size_t>(settings.pathLength * settings.backgroundProbability);
+    for (const auto& site : sites)
     {
-        int length = pathLength;
-        if (layout == PathLayout::Mixed)
-        {
-            if (robot % 7 == 0)
-                length = 0;
-            else if (robot % 7 == 1)
-                length = 1 + pick(std::max(1, pathLength / 100));
-            else
-                length = pathLength / 4 + pick(3 * pathLength / 4 + 1);
-        }
-        scenario.abysses[robot] = length + 1;
+        debrisCapacity += 3 * (
+            static_cast<std::size_t>(CORE_RADIUS * site.debris.coreProbability) +
+            static_cast<std::size_t>(OUTER_RADIUS * site.debris.outerProbability));
     }
-
-    const int wreckRobot = wreckLocation ? wreckLocation->robot : pick(ROBOT_COUNT);
-    if (scenario.abysses[wreckRobot] == 1)
-        scenario.abysses[wreckRobot] = pathLength + 1;
-    const int wreckSegment = wreckLocation ? wreckLocation->segment :
-                            1 + pick(scenario.abysses[wreckRobot] - 1);
-    scenario.abysses[wreckRobot] = std::max(scenario.abysses[wreckRobot], wreckSegment + 1);
-    scenario.shipwreck = Location{wreckRobot, wreckSegment};
-
-    for (int robot = 0; robot < ROBOT_COUNT; ++robot)
+    scenario.debris.reserve(debrisCapacity);
+    if (targetCenter)
     {
-        const int length = scenario.abysses[robot] - 1;
-        if (length == 0)
-            continue;
-        for (int sample = 0; sample < backgroundPerRobot; ++sample)
-            scenario.debris.push_back({robot, 1 + pick(length)});
+        const int segment = std::clamp(
+            targetCenter->segment + clusterOffset(random, CORE_RADIUS), 1, settings.pathLength);
+        scenario.shipwreck = Location{targetCenter->robot, segment};
     }
-
-    const int wreckRadius = std::max(SIGNAL_RANGE, 3 * pathLength / 4);
-    const int wreckSamples = std::min(50'000, wreckRadius / 10) * 10 /
-                             distribution.wreckDensityDivisor;
-    addDebrisCluster(scenario, random, *scenario.shipwreck, wreckRadius, wreckSamples);
-    for (int cluster = 0; cluster < distribution.decoyClusterCount; ++cluster)
-    {
-        const int robot = pick(ROBOT_COUNT);
-        const int length = scenario.abysses[robot] - 1;
-        if (length > 0)
-        {
-            const int radius = std::max(SIGNAL_RANGE, pathLength / 10);
-            const int samples = std::min(50'000, radius / 5) * 5 /
-                                distribution.decoyDensityDivisor;
-            addDebrisCluster(scenario, random, {robot, 1 + pick(length)}, radius, samples);
-        }
-    }
-
-    if (wreckAvailability == WreckAvailability::Unfindable)
-        scenario.shipwreck.reset();
+    addBackgroundDebris(scenario, settings.backgroundProbability, random);
+    for (const auto& site : sites)
+        addWreckDebris(scenario, site, random);
     normalizeDebris(scenario, random);
     return scenario;
 }

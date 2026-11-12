@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <optional>
-
 #include "mothership.h"
 #include "seafloor_survey.h"
 
@@ -19,7 +17,7 @@ class Search
 public:
   explicit Search(Mothership &mothership); // REQUIRED
 
-  std::optional<Location> findShipwreck(); // REQUIRED
+  SearchResult findShipwreck(); // REQUIRED
 
 private:
   Mothership &mothership; // REQUIRED

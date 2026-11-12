@@ -1,10 +1,9 @@
-import hashlib
 from pathlib import Path
 from typing import List, Optional
 
 from .catalog import TESTS, TestDefinition
 from .processes import (
-    BuildError, CheckError, ProcessError, remove_if_exists, run_process, write_process_log,
+    BuildError, CheckError, ProcessError, run_process, write_process_log,
 )
 from .results import TestResult, parse_result, read_peak_memory
 
@@ -16,12 +15,29 @@ PROFILE_TIMEOUT_SECONDS = 300
 MEMCHECK = ('valgrind', '--tool=memcheck', '--leak-check=yes')
 
 
+def profile_peak_memory(executable: Path, test: TestDefinition, report: Path, log: Path) -> int:
+    report.parent.mkdir(parents=True, exist_ok=True)
+    if report.exists():
+        report.unlink()
+    process = run_process([
+        'valgrind', '--tool=massif', '--time-unit=B', '--peak-inaccuracy=0',
+        '--massif-out-file=' + str(report), str(executable),
+        '--gtest_filter=' + test.full_name,
+    ], log.parent, PROFILE_TIMEOUT_SECONDS)
+    write_process_log(log, 'Massif ' + report.stem, process.output)
+    measurement = parse_result(test, executable.name, process)
+    if not measurement.passed:
+        raise CheckError(measurement.failure)
+    return read_peak_memory(report)
+
+
 class CheckRunner:
     def __init__(self, selection: Optional[TestDefinition] = None):
         self.selection = selection
         self.log_path = BUILD_DIRECTORY / 'check.log'
         tests = BUILD_DIRECTORY / 'shipwreck_tests'
         references = TEST_SUITE / 'references'
+        self.reference_profiles = references / 'massif'
         self.basic_tests = tests / 'shipwreck_tests'
         self.performance_tests = {
             'Yours': tests / 'shipwreck_runtime_tests',
@@ -66,7 +82,14 @@ class CheckRunner:
         for result in targets:
             for strategy in ('Instructor', 'Round Robin'):
                 command = [str(self.performance_tests[strategy])]
-                result.references.append(self.run_case(result.test, strategy, command))
+                reference = self.run_case(result.test, strategy, command)
+                if reference.passed:
+                    report = self.reference_profiles / f'{strategy}.{result.test.full_name}.out'
+                    try:
+                        reference.peak_memory_bytes = read_peak_memory(report)
+                    except (CheckError, OSError) as error:
+                        reference.failure = 'Reference memory profile unavailable: ' + str(error)
+                result.references.append(reference)
 
     def run_case(self, test: TestDefinition, strategy: str, command: List[str]) -> TestResult:
         heading = f'{strategy}: {test.full_name}'
@@ -82,53 +105,15 @@ class CheckRunner:
         return parse_result(test, strategy, process)
 
     def profile_memory(self, results: List[TestResult]) -> None:
-        targets = [
-            measurement
-            for result in results if result.test.is_performance
-            for measurement in [result, *result.references] if measurement.passed
-        ]
+        targets = [result for result in results if result.test.is_performance and result.passed]
         if not targets:
             return
         print('Profiling memory...', flush=True)
-        directory = BUILD_DIRECTORY / 'massif'
-        directory.mkdir(exist_ok=True)
         for result in targets:
-            self.profile_case(result, directory)
-
-    def profile_case(self, result: TestResult, directory: Path) -> None:
-        report = directory / f'{result.strategy}.{result.test.full_name}.out'
-        heading = f'Massif {result.strategy}: {result.test.full_name}'
-        command = [
-            'valgrind', '--tool=massif', '--time-unit=B', '--peak-inaccuracy=0',
-            '--massif-out-file=' + str(report), str(self.performance_tests[result.strategy]),
-            '--gtest_filter=' + result.test.full_name,
-        ]
-        try:
-            cache = report.with_suffix('.sha256')
-            cache_key = None
-            if result.strategy != 'Yours':
-                executable = self.performance_tests[result.strategy]
-                cache_key = hashlib.sha256(
-                    executable.read_bytes() + '\0'.join(command).encode('utf-8')
-                ).hexdigest()
-                try:
-                    if cache.read_text() == cache_key:
-                        result.peak_memory_bytes = read_peak_memory(report)
-                        write_process_log(self.log_path, heading, 'Using saved reference memory profile.\n')
-                        return
-                except (CheckError, OSError):
-                    pass
-                remove_if_exists(cache)
-            remove_if_exists(report)
-            process = run_process(command, BUILD_DIRECTORY, PROFILE_TIMEOUT_SECONDS)
-            write_process_log(self.log_path, heading, process.output)
-            if process.returncode:
-                raise CheckError(f'Massif exited with status {process.returncode}.')
-            result.peak_memory_bytes = read_peak_memory(report)
-            if cache_key is not None:
-                cache.write_text(cache_key)
-        except (CheckError, OSError) as error:
-            write_process_log(self.log_path, heading, str(error))
-            result.failure = '\n'.join(part for part in (
-                result.failure, 'Peak memory measurement unavailable: ' + str(error),
-            ) if part)
+            report = BUILD_DIRECTORY / 'massif' / f'Yours.{result.test.full_name}.out'
+            try:
+                result.peak_memory_bytes = profile_peak_memory(
+                    self.performance_tests['Yours'], result.test, report, self.log_path)
+            except (CheckError, OSError) as error:
+                write_process_log(self.log_path, 'Massif ' + report.stem, str(error))
+                result.failure = 'Peak memory measurement unavailable: ' + str(error)

@@ -1,5 +1,5 @@
 /*
- * OPTIONAL HELPER - EDIT, REPLACE, OR DELETE
+ * STUDENT CODE - OPTIONAL - EDIT, REPLACE, OR DELETE
  */
 
 #include "seafloor_survey.h"

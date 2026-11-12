@@ -3,6 +3,7 @@ import importlib.util
 import io
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -10,7 +11,8 @@ from unittest.mock import patch
 WORKSPACE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(WORKSPACE / '.guides/tests'))
 
-from runner.catalog import TESTS, TestDefinition
+from runner.catalog import TESTS
+from runner.execution import CheckRunner
 from runner.output import format_count, format_memory, print_results
 from runner.processes import BuildError, ProcessResult
 from runner.results import TestResult, calculate_grade, parse_result
@@ -21,10 +23,7 @@ grade = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(grade)
 
 
-LIMITED_TEST = TestDefinition(
-    13, 'LargeClusteredDebris', 'Clustered Debris', is_performance=True,
-    max_ticks=650_000_000, max_runtime_seconds=8, max_memory_bytes=4 * 1024 * 1024,
-)
+LIMITED_TEST = TESTS[8]
 
 
 def passing_result(test):
@@ -58,7 +57,7 @@ class GradingTests(unittest.TestCase):
                     self.assertTrue(result.passed)
 
     def test_correctness_is_required_even_when_every_limit_passes(self):
-        result = passing_result(TESTS[12])
+        result = passing_result(TESTS[8])
         result.fail('Wrong wreck location.')
         self.assertFalse(result.earns_credit)
 
@@ -67,8 +66,8 @@ class GradingTests(unittest.TestCase):
         self.assertTrue(result.earns_credit)
         self.assertEqual(result.performance_checks, [])
 
-    def test_unfindable_has_no_tick_limit_but_enforces_resources(self):
-        result = passing_result(TESTS[17])
+    def test_exhaustive_search_has_no_tick_limit_but_enforces_resources(self):
+        result = passing_result(TESTS[-1])
         result.ticks = 10 ** 15
         self.assertTrue(result.earns_credit)
         self.assertNotIn('Ticks', [check.label for check in result.performance_checks])
@@ -76,7 +75,7 @@ class GradingTests(unittest.TestCase):
         self.assertFalse(result.earns_credit)
 
     def test_reference_failures_do_not_change_fixed_threshold_credit(self):
-        result = passing_result(TESTS[12])
+        result = passing_result(TESTS[8])
         result.references = [TestResult(result.test, 'Instructor', False)]
         self.assertTrue(result.earns_credit)
 
@@ -84,17 +83,17 @@ class GradingTests(unittest.TestCase):
         results = [passing_result(test) for test in TESTS]
         self.assertEqual(calculate_grade(results), 100)
         results[0].fail('Incorrect result.')
-        results[12].ticks = results[12].test.max_ticks
-        self.assertAlmostEqual(calculate_grade(results), 100 * 16 / 18)
-        self.assertAlmostEqual(calculate_grade([passing_result(TESTS[0])]), 100 / 18)
+        results[8].ticks = results[8].test.max_ticks
+        self.assertAlmostEqual(calculate_grade(results), 100 * 10 / 12)
+        self.assertAlmostEqual(calculate_grade([passing_result(TESTS[0])]), 100 / 12)
 
     def test_display_rounding_does_not_change_credit(self):
         result = passing_result(LIMITED_TEST)
         result.ticks = result.test.max_ticks - 1
-        self.assertEqual(format_count(result.ticks), '650M')
+        self.assertEqual(format_count(result.ticks), '10M')
         self.assertTrue(result.earns_credit)
         result.ticks += 1
-        self.assertEqual(format_count(result.ticks), '650M')
+        self.assertEqual(format_count(result.ticks), '10M')
         self.assertFalse(result.earns_credit)
 
     def test_compact_units(self):
@@ -114,8 +113,8 @@ class GradingTests(unittest.TestCase):
             reference.strategy = strategy
             result.references.append(reference)
         output = render([result])
-        for text in ('Correctness:', 'Ticks (<650M):', 'Runtime (<8s):',
-                     'Peak memory (<4 MiB):', 'Yours / Instructor',
+        for text in ('Correctness:', 'Ticks (<10M):', 'Runtime (<8s):',
+                     'Peak memory (<2 MiB):', 'Yours / Instructor',
                      'Yours / Round Robin', '1.00×', 'Credit: 1/1'):
             self.assertIn(text, output)
         self.assertNotIn('Score:', output)
@@ -123,35 +122,75 @@ class GradingTests(unittest.TestCase):
         self.assertNotIn('Yours vs', output)
         self.assertNotIn('Starter', output)
 
-    def test_unfindable_displays_ticks_without_a_tick_verdict(self):
-        output = render([passing_result(TESTS[17])])
+    def test_exhaustive_search_displays_ticks_without_a_tick_verdict(self):
+        output = render([passing_result(TESTS[-1])])
         self.assertIn('Ticks', output)
         self.assertNotIn('Ticks (<', output)
 
     def test_multiple_scenarios_use_the_reported_total_ticks(self):
-        output = '[ TICKS    ] scenarios=8 total=12345678\n[  PASSED  ] 1 test.\n'
-        result = parse_result(TESTS[12], 'Yours', ProcessResult(0, output, 0.1))
+        output = '[ TICKS    ] scenarios=4 total=12345678\n[  PASSED  ] 1 test.\n'
+        result = parse_result(TESTS[8], 'Yours', ProcessResult(0, output, 0.1))
         self.assertTrue(result.passed)
-        self.assertEqual(result.scenario_count, 8)
+        self.assertEqual(result.scenario_count, 4)
         self.assertEqual(result.ticks, 12_345_678)
-        self.assertIn('Clustered Debris — 8 scenarios', render([result]))
+        self.assertIn('Clustered Debris — 4 scenarios', render([result]))
 
     def test_full_summary_distinguishes_correctness_from_credit(self):
         results = [passing_result(test) for test in TESTS]
-        results[12].ticks = results[12].test.max_ticks
+        results[8].ticks = results[8].test.max_ticks
         output = render(results)
-        self.assertIn('Correctness: 18/18 passed', output)
-        self.assertIn('Performance: 5/6 passed', output)
-        self.assertIn('Score: 94.4% (17/18 credits)', output)
+        self.assertIn('Correctness: 12/12 passed', output)
+        self.assertIn('Performance: 3/4 passed', output)
+        self.assertIn('Score: 91.7% (11/12 credits)', output)
 
     def test_grader_and_test_output_use_the_same_score_and_feedback(self):
         results = [passing_result(test) for test in TESTS]
-        results[12].runtime_seconds = results[12].test.max_runtime_seconds
+        results[8].runtime_seconds = results[8].test.max_runtime_seconds
         with patch.object(grade, 'CheckRunner') as runner:
             runner.return_value.run.return_value = results
             score, feedback = grade.evaluate()
         self.assertEqual(score, calculate_grade(results))
         self.assertEqual(feedback, render(results))
+
+    def test_reference_memory_is_loaded_from_shipped_profiles(self):
+        result = passing_result(TESTS[8])
+        runner = CheckRunner()
+        with tempfile.TemporaryDirectory() as directory:
+            runner.reference_profiles = Path(directory)
+            for strategy in ('Instructor', 'Round Robin'):
+                report = runner.reference_profiles / f'{strategy}.{result.test.full_name}.out'
+                report.write_text('mem_heap_B=1234\nmem_heap_B=5678\n')
+            with patch.object(runner, 'run_case', side_effect=lambda test, strategy, command:
+                              TestResult(test, strategy, True)), redirect_stdout(io.StringIO()):
+                runner.run_references([result])
+        self.assertEqual([reference.peak_memory_bytes for reference in result.references],
+                         [5678, 5678])
+
+    def test_missing_reference_profile_does_not_change_student_credit(self):
+        result = passing_result(TESTS[8])
+        runner = CheckRunner()
+        with tempfile.TemporaryDirectory() as directory:
+            runner.reference_profiles = Path(directory)
+            with patch.object(runner, 'run_case', side_effect=lambda test, strategy, command:
+                              TestResult(test, strategy, True)), redirect_stdout(io.StringIO()):
+                runner.run_references([result])
+        self.assertTrue(result.earns_credit)
+        for reference in result.references:
+            self.assertIsNone(reference.peak_memory_bytes)
+            self.assertIn('Reference memory profile unavailable', reference.failure)
+
+    def test_only_student_performance_cases_are_profiled_during_checks(self):
+        basic = passing_result(TESTS[0])
+        performance = passing_result(TESTS[8])
+        performance.references = [passing_result(TESTS[8])]
+        failed = TestResult(TESTS[9], 'Yours', False)
+        runner = CheckRunner()
+        with patch('runner.execution.profile_peak_memory', return_value=1234) as profile, \
+                redirect_stdout(io.StringIO()):
+            runner.profile_memory([basic, performance, failed])
+        self.assertEqual(profile.call_count, 1)
+        self.assertIs(profile.call_args[0][1], performance.test)
+        self.assertEqual(performance.peak_memory_bytes, 1234)
 
     def test_build_failure_returns_zero(self):
         with patch.object(grade, 'CheckRunner') as runner:

@@ -21,7 +21,8 @@ def main() -> int:
             target.parent.mkdir(parents=True, exist_ok=True)
             source = WORKSPACE / name
             if source.is_dir():
-                shutil.copytree(source, target)
+                shutil.copytree(source, target,
+                                ignore=shutil.ignore_patterns('__pycache__', '*.py[cod]'))
             else:
                 shutil.copy2(source, target)
     except (OSError, ValueError) as error:

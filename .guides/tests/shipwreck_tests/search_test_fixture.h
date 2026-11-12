@@ -6,17 +6,11 @@
 #include "scenario.h"
 #include "simulated_mothership.h"
 
+#include <exception>
 #include <iostream>
 
 namespace
 {
-Scenario blockedScenario()
-{
-    Scenario scenario;
-    scenario.abysses.fill(1);
-    return scenario;
-}
-
 class Shipwreck : public ::testing::Test
 {
 protected:
@@ -35,25 +29,52 @@ protected:
     {
         const bool reachable = scenario.shipwreck &&
             scenario.shipwreck->segment < scenario.abysses[scenario.shipwreck->robot];
+        ::testing::Message expected;
+        if (reachable)
+            expected << "Expected: shipwreck at robot " << scenario.shipwreck->robot
+                     << ", segment " << scenario.shipwreck->segment;
+        else
+            expected << "Expected: no reachable shipwreck";
+        SCOPED_TRACE(expected.GetString());
+
         SimulatedMothership mothership(scenario);
-        Search search(mothership);
-        const auto actual = search.findShipwreck();
+        SearchResult actual{false, Location{}};
+        try
+        {
+            Search search(mothership);
+            actual = search.findShipwreck();
+        }
+        catch (const std::exception& error)
+        {
+            FAIL() << "Search stopped with error: " << error.what();
+        }
         ++scenarioCount;
         totalTicks += mothership.getElapsedTicks();
         const auto discovered = mothership.getDiscoveredShipwreck();
 
-        ASSERT_EQ(actual.has_value(), reachable);
-        ASSERT_EQ(discovered.has_value(), reachable);
+        ::testing::Message returned;
+        returned << "Returned: isFound = " << (actual.isFound ? "true" : "false");
+        if (actual.isFound)
+            returned << ", robot " << actual.location.robot
+                     << ", segment " << actual.location.segment;
+        SCOPED_TRACE(returned.GetString());
+
+        if (actual.isFound != reachable)
+            FAIL() << "The returned result does not match the expected outcome.";
+        ASSERT_EQ(discovered.has_value(), reachable)
+            << "The search must discover the shipwreck before reporting it.";
         if (reachable)
         {
-            EXPECT_EQ(actual->robot, scenario.shipwreck->robot);
-            EXPECT_EQ(actual->segment, scenario.shipwreck->segment);
+            if (actual.location.robot != scenario.shipwreck->robot ||
+                actual.location.segment != scenario.shipwreck->segment)
+                ADD_FAILURE() << "The search returned the wrong shipwreck location.";
             EXPECT_EQ(discovered->robot, scenario.shipwreck->robot);
             EXPECT_EQ(discovered->segment, scenario.shipwreck->segment);
         }
         else
         {
-            EXPECT_TRUE(mothership.allPathsExplored());
+            EXPECT_TRUE(mothership.allPathsExplored())
+                << "Search stopped while reachable paths remained.";
         }
     }
 };

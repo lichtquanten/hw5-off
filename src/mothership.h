@@ -35,6 +35,12 @@ struct Location
   int segment;
 };
 
+struct SearchResult
+{
+  bool isFound;
+  Location location; // Only meaningful when isFound is true.
+};
+
 class Mothership
 {
 public:
@@ -47,8 +53,7 @@ public:
   virtual long long getElapsedTicks() const = 0;
 
   virtual void switchToRobot(int robot) = 0;
-  // Request 1–100 segments. Debris or the wreck stops a drive early;
-  // reaching an abyss or traveling beyond the tether causes failure.
-  [[nodiscard]] virtual DriveResult driveActiveRobot(
+
+  virtual DriveResult driveActiveRobot(
       int maxSegments = MAX_SEGMENTS_PER_DRIVE) = 0;
 };

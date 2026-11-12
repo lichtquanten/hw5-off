@@ -8,7 +8,6 @@
 
 #include <exception>
 #include <iostream>
-#include <optional>
 #include <stdexcept>
 
 namespace
@@ -31,35 +30,6 @@ namespace
     return scenario;
   }
 
-  void verifySearchResult(const SimulatedMothership &mothership,
-                          std::optional<Location> result)
-  {
-    const auto discovered = mothership.getDiscoveredShipwreck();
-
-    if (result)
-    {
-      if (!discovered || result->robot != discovered->robot ||
-          result->segment != discovered->segment)
-      {
-        throw std::runtime_error(
-            "The returned location was not a discovered shipwreck.");
-      }
-      return;
-    }
-
-    if (discovered)
-    {
-      throw std::runtime_error(
-          "The search found the wreck but returned nullopt.");
-    }
-
-    if (!mothership.allPathsExplored())
-    {
-      throw std::runtime_error(
-          "The search stopped before exploring every reachable path.");
-    }
-  }
-
 }
 
 int main()
@@ -71,17 +41,18 @@ int main()
 
     Search search(mothership);
     const auto result = search.findShipwreck();
-    verifySearchResult(mothership, result);
+    const auto discovered = mothership.getDiscoveredShipwreck();
 
-    if (result)
+    if (!result.isFound || !discovered ||
+        result.location.robot != discovered->robot ||
+        result.location.segment != discovered->segment)
     {
-      std::cout << "PASS: found shipwreck at robot " << result->robot
-                << ", segment " << result->segment << '\n';
+      throw std::runtime_error(
+          "The search did not return a discovered shipwreck.");
     }
-    else
-    {
-      std::cout << "PASS: no reachable shipwreck.\n";
-    }
+
+    std::cout << "PASS: found shipwreck at robot " << result.location.robot
+              << ", segment " << result.location.segment << '\n';
 
     return 0;
   }

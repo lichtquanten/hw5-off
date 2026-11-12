@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-std::optional<Location> Search::findShipwreck()
+SearchResult Search::findShipwreck()
 {
     bool workRemaining = true;
     while (workRemaining)
@@ -23,9 +23,9 @@ std::optional<Location> Search::findShipwreck()
                     std::min(MAX_SEGMENTS_PER_DRIVE, safeDistance));
                 moved += result.segmentsMoved;
                 if (result.reason == DriveStopReason::ShipwreckFound)
-                    return Location{robot, mothership.getRobotPosition(robot)};
+                    return SearchResult{true, Location{robot, mothership.getRobotPosition(robot)}};
             }
         }
     }
-    return std::nullopt;
+    return SearchResult{false, Location{}};
 }

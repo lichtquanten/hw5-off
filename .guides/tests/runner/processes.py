@@ -50,13 +50,6 @@ def run_process(
     return ProcessResult(process.returncode, process.stdout, time.perf_counter() - started)
 
 
-def remove_if_exists(path: Path) -> None:
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        pass
-
-
 def write_process_log(path: Path, heading: str, output: str, append: bool = True) -> None:
     with path.open('a' if append else 'w') as stream:
         if heading:

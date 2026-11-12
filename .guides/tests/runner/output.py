@@ -35,8 +35,7 @@ def format_memory(value: Optional[int]) -> str:
         return '—'
     for scale, unit in ((1024 ** 3, 'GiB'), (1024 ** 2, 'MiB'), (1024, 'KiB')):
         if value >= scale:
-            number = f'{value / scale:.2f}'.rstrip('0').rstrip('.')
-            return f'{number} {unit}'
+            return f'{value / scale:.0f} {unit}'
     return f'{value} B'
 
 

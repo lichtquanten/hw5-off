@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <optional>
 #include <set>
 
 #include "ahead_debris.h"
@@ -12,7 +11,7 @@ class Search
 {
 public:
     explicit Search(Mothership& mothership);
-    std::optional<Location> findShipwreck();
+    SearchResult findShipwreck();
 
 private:
     struct PriorityComponents

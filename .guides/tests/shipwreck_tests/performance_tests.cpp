@@ -1,78 +1,60 @@
 #include "search_test_fixture.h"
 #include "performance_scenarios.h"
 
-using shipwreck_tests::DebrisPattern;
-using shipwreck_tests::PathLayout;
-using shipwreck_tests::WreckAvailability;
+using shipwreck_tests::ScenarioSettings;
 
 namespace
 {
-constexpr int BENCHMARK_PATH_LENGTH = 250'000;
-constexpr int BENCHMARK_SCENARIOS = 8;
+constexpr unsigned CLUSTERED_DEBRIS_SEED = 155920;
+constexpr unsigned FALSE_LEADS_SEED = 155921;
+constexpr unsigned WEAK_SIGNAL_SEED = 155922;
+constexpr unsigned EXHAUSTIVE_SEARCH_SEED = 155925;
+constexpr double WEAK_EVIDENCE_SCALE = 0.25;
+constexpr Location WRECK_SITES[] = {
+    {12, 30'000}, {37, 50'000}, {62, 30'000}, {87, 50'000},
+};
 
-Scenario performanceScenario(
-    unsigned seed, DebrisPattern pattern, int scenario,
-    PathLayout layout = PathLayout::Uniform)
+template<class Check>
+void checkWreckScenarios(const ScenarioSettings& settings, unsigned seed, Check check)
 {
-    const int robot = 12 + 25 * (scenario / 2);
-    const int depthPercent = scenario % 2 == 0 ? 25 : 75;
-    const int background = pattern == DebrisPattern::Sparse ? 2 : BENCHMARK_PATH_LENGTH / 5000;
-    return shipwreck_tests::makePerformanceScenario(
-        seed + robot * 10 + depthPercent, background, pattern, layout,
-        WreckAvailability::Reachable, BENCHMARK_PATH_LENGTH,
-        Location{robot, BENCHMARK_PATH_LENGTH * depthPercent / 100});
-}
-}
-
-TEST_F(Shipwreck, LargeClusteredDebris)
-{
-    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
+    unsigned scenarioIndex = 0;
+    for (Location center : WRECK_SITES)
     {
-        SCOPED_TRACE(scenario);
-        checkSearch(performanceScenario(155920, DebrisPattern::Clustered, scenario));
+        SCOPED_TRACE(scenarioIndex);
+        check(shipwreck_tests::makePerformanceScenario(settings, seed + scenarioIndex, center));
+        ++scenarioIndex;
     }
 }
-
-TEST_F(Shipwreck, LargeMisleadingClusters)
-{
-    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
-    {
-        SCOPED_TRACE(scenario);
-        checkSearch(performanceScenario(155921, DebrisPattern::Misleading, scenario));
-    }
 }
 
-TEST_F(Shipwreck, LargeWeakSignal)
+TEST_F(Shipwreck, ClusteredDebris)
 {
-    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
-    {
-        SCOPED_TRACE(scenario);
-        checkSearch(performanceScenario(155922, DebrisPattern::WeakSignal, scenario));
-    }
+    checkWreckScenarios(ScenarioSettings{}, CLUSTERED_DEBRIS_SEED,
+        [this](const Scenario& scenario) { checkSearch(scenario); });
 }
 
-TEST_F(Shipwreck, LargeSparseDebris)
+TEST_F(Shipwreck, StrongFalseLeads)
 {
-    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
-    {
-        SCOPED_TRACE(scenario);
-        checkSearch(performanceScenario(155923, DebrisPattern::Sparse, scenario));
-    }
+    ScenarioSettings settings;
+    settings.formerWreckDebris = {{{0.03, 0.002}, {0.04, 0.003}, {0.05, 0.004}}};
+    checkWreckScenarios(settings, FALSE_LEADS_SEED,
+        [this](const Scenario& scenario) { checkSearch(scenario); });
 }
 
-TEST_F(Shipwreck, LargeUnequalPaths)
+TEST_F(Shipwreck, WeakWreckSignal)
 {
-    for (int scenario = 0; scenario < BENCHMARK_SCENARIOS; ++scenario)
-    {
-        SCOPED_TRACE(scenario);
-        checkSearch(performanceScenario(
-            155924, DebrisPattern::Misleading, scenario, PathLayout::Mixed));
-    }
+    ScenarioSettings settings;
+    settings.targetDebris = settings.targetDebris.scaled(WEAK_EVIDENCE_SCALE);
+    for (auto& debris : settings.formerWreckDebris)
+        debris = debris.scaled(WEAK_EVIDENCE_SCALE);
+    checkWreckScenarios(settings, WEAK_SIGNAL_SEED,
+        [this](const Scenario& scenario) { checkSearch(scenario); });
 }
 
-TEST_F(Shipwreck, LargeUnfindable)
+TEST_F(Shipwreck, ExhaustiveSearch)
 {
-    checkSearch(shipwreck_tests::makePerformanceScenario(
-        155925, 1000, DebrisPattern::Clustered,
-        PathLayout::Uniform, WreckAvailability::Unfindable));
+    ScenarioSettings settings;
+    settings.pathLength = 1'000'000;
+    settings.backgroundProbability = 0.0001;
+    checkSearch(shipwreck_tests::makePerformanceScenario(settings, EXHAUSTIVE_SEARCH_SEED));
 }

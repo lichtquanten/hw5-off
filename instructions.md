@@ -41,6 +41,8 @@ You can request a drive of fewer than 100 segments, such as to avoid hitting an 
 
 You expect that the shipwreck will have much debris surrounding it. Since much time has passed since the sinking, though, debris will have been swept up and carried to areas away from the shipwreck.
 
+Some debris comes from wrecks that have already been discovered and removed. These former wreck sites usually have less debris remaining, but some can have as much debris as the wreck you are seeking. Debris provides evidence of a promising area without guaranteeing that a wreck remains there.
+
 You can reason about debris using a measure called signal strength. Signal strength predicts the likelihood of finding the shipwreck near a robot. Debris found nearby a robot adds to signal strength.
 
 For signal strength, debris that is “nearby” includes:
@@ -112,6 +114,8 @@ Look at `src/examples/using_data_structures.cpp`. You will find examples of how 
 ## Editing Code
 
 Implement your search in `findShipwreck()`. Return `SearchResult`.
+Set `isFound` to `true` and fill in `location` when the shipwreck is found.
+Otherwise, return `SearchResult{false, Location{}}`. The `location` field is ignored when `isFound` is `false`.
 
 You can add any data members or member functions to the `Search` class. You will likely want to add more classes and files. You do not need to update the Makefile when adding files to `src`. The Makefile is already configured to find `.cpp` and `.h` files in `src/`.
 
@@ -141,6 +145,8 @@ make test
 The full test suite may take up to 5 minutes or so to run.
 
 The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution.
+
+The performance tests cover clustered debris, strong false leads, weak wreck signals, and a search with no wreck on paths of 1 million segments. Reference runtimes and ticks are measured during each run; reference peak memory comes from profiles shipped with the reference binaries. Your peak memory is measured during each run.
 
 Round-robin solution: Advances each robot one after the other, without considering debris, until finding the shipwreck.
 

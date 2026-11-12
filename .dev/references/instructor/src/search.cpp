@@ -132,7 +132,7 @@ void Search::discardPastDiscoveries(int path)
     debrisHistory[path].discardBefore(earliestSignal);
 }
 
-std::optional<Location> Search::findShipwreck()
+SearchResult Search::findShipwreck()
 {
     while (!rankedRobots.empty())
     {
@@ -148,7 +148,7 @@ std::optional<Location> Search::findShipwreck()
                 std::min(MAX_SEGMENTS_PER_DRIVE, safeDistance));
             moved += result.segmentsMoved;
             if (result.reason == DriveStopReason::ShipwreckFound)
-                return Location{robot, mothership.getRobotPosition(robot)};
+                return SearchResult{true, Location{robot, mothership.getRobotPosition(robot)}};
             if (result.reason == DriveStopReason::DebrisFound)
             {
                 recordDiscovery(robot);
@@ -163,5 +163,5 @@ std::optional<Location> Search::findShipwreck()
         }
         refreshAffectedPriorities(robot, previousPosition, discoveredDebris);
     }
-    return std::nullopt;
+    return SearchResult{false, Location{}};
 }

@@ -7,43 +7,41 @@
 #include "scenario.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <utility>
 
 namespace
 {
   std::array<SimulatedRobot, ROBOT_COUNT> createRobots(const Scenario &scenario)
   {
-    struct RobotSetup
-    {
-      int reachableEnd = TETHER_LENGTH;
-      std::vector<int> debrisSegments;
-      std::optional<int> shipwreckSegment;
-    };
+    std::array<std::vector<int>, ROBOT_COUNT> debrisByRobot;
+    std::array<std::size_t, ROBOT_COUNT> debrisCounts{};
 
-    std::array<RobotSetup, ROBOT_COUNT> setups;
+    for (Location debris : scenario.debris)
+    {
+      ++debrisCounts[debris.robot];
+    }
 
     for (int robotIndex = 0; robotIndex < ROBOT_COUNT; ++robotIndex)
     {
-      setups[robotIndex].reachableEnd = scenario.abysses[robotIndex] - 1;
+      debrisByRobot[robotIndex].reserve(debrisCounts[robotIndex]);
     }
 
     for (Location debris : scenario.debris)
     {
-      setups[debris.robot].debrisSegments.push_back(debris.segment);
-    }
-
-    if (scenario.shipwreck)
-    {
-      setups[scenario.shipwreck->robot].shipwreckSegment =
-          scenario.shipwreck->segment;
+      debrisByRobot[debris.robot].push_back(debris.segment);
     }
 
     std::array<SimulatedRobot, ROBOT_COUNT> robots;
     for (int robotIndex = 0; robotIndex < ROBOT_COUNT; ++robotIndex)
     {
-      auto &setup = setups[robotIndex];
+      std::optional<int> shipwreckSegment;
+      if (scenario.shipwreck && scenario.shipwreck->robot == robotIndex)
+      {
+        shipwreckSegment = scenario.shipwreck->segment;
+      }
       robots[robotIndex] = SimulatedRobot(
-          setup.reachableEnd, std::move(setup.debrisSegments), setup.shipwreckSegment);
+          scenario.abysses[robotIndex] - 1, std::move(debrisByRobot[robotIndex]), shipwreckSegment);
     }
 
     return robots;

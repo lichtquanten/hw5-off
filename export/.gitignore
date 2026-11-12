@@ -1,8 +1,0 @@
-# Build output
-/build/
-
-# Python caches
-__pycache__/
-*.py[cod]
-.guides/tests/references/instructor/bin/
-.guides/tests/references/round_robin/bin/

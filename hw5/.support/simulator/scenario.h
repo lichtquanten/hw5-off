@@ -1,26 +1,18 @@
-/*
- * PROVIDED CODE - DO NOT EDIT
- */
-
 #pragma once
 
-#include <array>
 #include <optional>
 #include <vector>
 
 #include "mothership.h"
 
+constexpr int DEFAULT_ROBOT_COUNT = 100;
+
 struct Scenario
 {
-  std::array<int, ROBOT_COUNT> abysses = []
-  {
-    std::array<int, ROBOT_COUNT> positions;
-    positions.fill(TETHER_LENGTH + 1);
-    return positions;
-  }();
+  std::vector<int> abysses = std::vector<int>(DEFAULT_ROBOT_COUNT, TETHER_LENGTH + 1);
   std::vector<Location> debris;
   std::optional<Location> shipwreck;
 };
 
-void validateRobotIndex(int robotIndex);
+void validateRobotIndex(int robotIndex, int robotCount);
 void validateScenario(const Scenario &scenario);

@@ -1,10 +1,4 @@
-# Build output
 /build/
-
-# Python caches
 __pycache__/
-*.py[cod]
-/hw5/.support/tests/references/instructor/bin/
-/hw5/.support/tests/references/round_robin/bin/
-/hw5/.support/tests/references/massif/
+/hw5/.support/tests/references/
 /.guides/secure/.support/

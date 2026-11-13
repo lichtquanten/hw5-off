@@ -5,9 +5,10 @@
 class Search
 {
 public:
-    explicit Search(Mothership& mothership) : mothership(mothership) {}
-    SearchResult findShipwreck();
+  explicit Search(Mothership &mothership)
+      : mothership(mothership) {}
+  SearchResult findShipwreck();
 
 private:
-    Mothership& mothership;
+  Mothership &mothership;
 };

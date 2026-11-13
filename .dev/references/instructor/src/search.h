@@ -1,50 +1,37 @@
 #pragma once
 
-#include <array>
-#include <set>
+#include <vector>
 
-#include "ahead_debris.h"
-#include "debris_history.h"
 #include "mothership.h"
+#include "trees.h"
 
 class Search
 {
 public:
-    explicit Search(Mothership& mothership);
-    SearchResult findShipwreck();
+  explicit Search(Mothership &mothership);
+  SearchResult findShipwreck();
 
 private:
-    struct PriorityComponents
-    {
-        double currentSignalStrength = 0;
-        double aheadNeighborScore = 0;
-        double unexploredNeighborhoodFraction = 0;
-        double progressMultiplier = 0;
-        double weightedScore() const;
-    };
+  struct Rank
+  {
+    int signal;
+    int position;
+    int robot;
+    bool operator<(const Rank &other) const;
+  };
 
-    struct RobotPriority
-    {
-        double score;
-        int robot;
-        bool operator<(const RobotPriority& other) const;
-    };
+  Mothership &mothership;
+  int robotCount;
+  std::vector<int> ends;
+  std::vector<int> positions;
+  std::vector<int> signals;
+  std::vector<std::vector<int>> debris;
+  AVLSet<Rank> waiting;
 
-    Mothership& mothership;
-    std::array<DebrisHistory, ROBOT_COUNT> debrisHistory;
-    AheadDebris aheadDebris;
-    std::array<PriorityComponents, ROBOT_COUNT> priorityComponents{};
-    std::set<RobotPriority> rankedRobots;
-
-    int pathEnd(int robot) const;
-    bool hasRemainingPath(int robot) const;
-    int currentSignalStrength(int robot) const;
-    double unexploredNeighborhoodFraction(int robot) const;
-    double progressMultiplier(int robot) const;
-    PriorityComponents measurePriority(int robot);
-    void setPriority(int robot, PriorityComponents components);
-    void refreshPriority(int robot);
-    void refreshAffectedPriorities(int robot, int previousPosition, bool discoveredDebris);
-    void recordDiscovery(int robot);
-    void discardPastDiscoveries(int path);
+  int leftOf(int robot) const;
+  int rightOf(int robot) const;
+  bool hasRemainingPath(int robot) const;
+  Rank rank(int robot) const;
+  int measureSignal(int robot) const;
+  void refreshWaitingSignal(int robot);
 };

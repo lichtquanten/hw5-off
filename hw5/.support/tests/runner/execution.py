@@ -1,24 +1,26 @@
 from pathlib import Path
+import shutil
 from typing import List, Optional
 
-from .catalog import TESTS, TestDefinition
+from .catalog import REFERENCES, TESTS, TestDefinition
 from .processes import (
     BuildError, CheckError, ProcessError, run_process, write_process_log,
 )
 from .results import TestResult, parse_result, read_peak_memory
 
 
-TEST_SUITE = Path(__file__).resolve().parents[1]
-BUILD_DIRECTORY = TEST_SUITE.parents[1] / 'build/tests'
+PROJECT = Path(__file__).resolve().parents[3]
 TEST_TIMEOUT_SECONDS = 30
 PROFILE_TIMEOUT_SECONDS = 300
 MEMCHECK = ('valgrind', '--tool=memcheck', '--leak-check=yes')
 
 
+def memory_report(directory: Path, strategy: str, test: TestDefinition) -> Path:
+    return directory / f'{strategy}.{test.full_name}.out'
+
+
 def profile_peak_memory(executable: Path, test: TestDefinition, report: Path, log: Path) -> int:
     report.parent.mkdir(parents=True, exist_ok=True)
-    if report.exists():
-        report.unlink()
     process = run_process([
         'valgrind', '--tool=massif', '--time-unit=B', '--peak-inaccuracy=0',
         '--massif-out-file=' + str(report), str(executable),
@@ -32,22 +34,21 @@ def profile_peak_memory(executable: Path, test: TestDefinition, report: Path, lo
 
 
 class CheckRunner:
-    def __init__(self, selection: Optional[TestDefinition] = None, project: Optional[Path] = None):
+    def __init__(self, selection: Optional[TestDefinition] = None, project: Path = PROJECT):
         self.selection = selection
-        self.test_suite = TEST_SUITE if project is None else project / '.support/tests'
-        self.build_directory = self.test_suite.parents[1] / 'build/tests'
+        self.test_suite = project / '.support/tests'
+        self.build_directory = project / 'build/tests'
         self.log_path = self.build_directory / 'check.log'
-        tests = self.build_directory / 'shipwreck_tests'
         references = self.test_suite / 'references'
         self.reference_profiles = references / 'massif'
-        self.basic_tests = tests / 'shipwreck_tests'
-        self.performance_tests = {
-            'Yours': tests / 'shipwreck_runtime_tests',
-            'Instructor': references / 'instructor/bin/shipwreck_reference',
-            'Round Robin': references / 'round_robin/bin/shipwreck_reference',
+        self.reference_binaries = {
+            strategy: references / directory / 'bin/performance_tests'
+            for strategy, directory in REFERENCES.items()
         }
 
     def run(self) -> List[TestResult]:
+        if shutil.which('valgrind') is None:
+            raise CheckError('Valgrind is required to check memory errors and peak memory usage.')
         self.build_tests()
         self.log_path.write_text('')
         tests = TESTS if self.selection is None else (self.selection,)
@@ -73,8 +74,8 @@ class CheckRunner:
 
     def run_student_test(self, test: TestDefinition) -> TestResult:
         if test.is_performance:
-            return self.run_case(test, 'Yours', [str(self.performance_tests['Yours'])])
-        return self.run_case(test, 'Yours', [*MEMCHECK, str(self.basic_tests)])
+            return self.run_case(test, 'Yours', [str(self.build_directory / 'performance_tests')])
+        return self.run_case(test, 'Yours', [*MEMCHECK, str(self.build_directory / 'basic_tests')])
 
     def run_references(self, results: List[TestResult]) -> None:
         targets = [result for result in results if result.test.is_performance]
@@ -82,11 +83,10 @@ class CheckRunner:
             return
         print('Running references...', flush=True)
         for result in targets:
-            for strategy in ('Instructor', 'Round Robin'):
-                command = [str(self.performance_tests[strategy])]
-                reference = self.run_case(result.test, strategy, command)
+            for strategy, executable in self.reference_binaries.items():
+                reference = self.run_case(result.test, strategy, [str(executable)])
                 if reference.passed:
-                    report = self.reference_profiles / f'{strategy}.{result.test.full_name}.out'
+                    report = memory_report(self.reference_profiles, strategy, result.test)
                     try:
                         reference.peak_memory_bytes = read_peak_memory(report)
                     except (CheckError, OSError) as error:
@@ -112,10 +112,10 @@ class CheckRunner:
             return
         print('Profiling memory...', flush=True)
         for result in targets:
-            report = self.build_directory / 'massif' / f'Yours.{result.test.full_name}.out'
+            report = memory_report(self.build_directory / 'massif', 'Yours', result.test)
             try:
                 result.peak_memory_bytes = profile_peak_memory(
-                    self.performance_tests['Yours'], result.test, report, self.log_path)
+                    self.build_directory / 'performance_tests', result.test, report, self.log_path)
             except (CheckError, OSError) as error:
                 write_process_log(self.log_path, 'Massif ' + report.stem, str(error))
                 result.failure = 'Peak memory measurement unavailable: ' + str(error)

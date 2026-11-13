@@ -1,15 +1,11 @@
-/*
- * PROVIDED CODE - DO NOT EDIT
- */
-
 #include "scenario.h"
 
 #include <algorithm>
 #include <stdexcept>
 
-void validateRobotIndex(int robotIndex)
+void validateRobotIndex(int robotIndex, int robotCount)
 {
-  if (robotIndex < 0 || robotIndex >= ROBOT_COUNT)
+  if (robotIndex < 0 || robotIndex >= robotCount)
   {
     throw std::out_of_range("Robot index is outside the valid range.");
   }
@@ -17,9 +13,9 @@ void validateRobotIndex(int robotIndex)
 
 namespace
 {
-  void validateLocation(Location location)
+  void validateLocation(Location location, int robotCount)
   {
-    validateRobotIndex(location.robot);
+    validateRobotIndex(location.robot, robotCount);
 
     if (location.segment < 1 || location.segment > TETHER_LENGTH)
     {
@@ -30,6 +26,11 @@ namespace
 
 void validateScenario(const Scenario &scenario)
 {
+  if (scenario.abysses.empty())
+  {
+    throw std::invalid_argument("A scenario needs at least one robot.");
+  }
+  const int robotCount = static_cast<int>(scenario.abysses.size());
   for (int segment : scenario.abysses)
   {
     if (segment < 1 || segment > TETHER_LENGTH + 1)
@@ -39,7 +40,7 @@ void validateScenario(const Scenario &scenario)
   }
   for (Location debris : scenario.debris)
   {
-    validateLocation(debris);
+    validateLocation(debris, robotCount);
   }
 
   if (!scenario.shipwreck)
@@ -48,7 +49,7 @@ void validateScenario(const Scenario &scenario)
   }
 
   const Location shipwreck = *scenario.shipwreck;
-  validateLocation(shipwreck);
+  validateLocation(shipwreck, robotCount);
 
   const auto overlapsShipwreck = [shipwreck](Location location)
   {

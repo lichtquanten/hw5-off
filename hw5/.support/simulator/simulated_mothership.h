@@ -1,10 +1,5 @@
-/*
- * PROVIDED CODE - DO NOT EDIT
- */
-
 #pragma once
 
-#include <array>
 #include <optional>
 #include <vector>
 
@@ -18,7 +13,8 @@ class SimulatedMothership final : public Mothership
 public:
   explicit SimulatedMothership(const Scenario &scenario);
 
-  const std::array<int, ROBOT_COUNT> &getAbysses() const override;
+  int getRobotCount() const override;
+  const std::vector<int> &getAbysses() const override;
   int getActiveRobot() const override;
   int getRobotPosition(int robotIndex) const override;
   long long getElapsedTicks() const override;
@@ -31,8 +27,8 @@ public:
   bool allPathsExplored() const;
 
 private:
-  std::array<int, ROBOT_COUNT> abysses;
-  std::array<SimulatedRobot, ROBOT_COUNT> robots;
+  std::vector<int> abysses;
+  std::vector<SimulatedRobot> robots;
   std::optional<Location> discoveredShipwreck;
   int activeRobotIndex = 0;
   long long elapsedTicks = 0;

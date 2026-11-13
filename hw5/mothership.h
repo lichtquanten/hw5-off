@@ -7,13 +7,12 @@
 
 #pragma once
 
-#include <array>
+#include <vector>
 
-constexpr int ROBOT_COUNT = 100;
 constexpr int TETHER_LENGTH = 10'000'000;
 constexpr int SIGNAL_RANGE = 500;
 constexpr int MAX_SEGMENTS_PER_DRIVE = 100;
-constexpr int SWITCH_COST = 10;
+constexpr int SWITCH_COST = 200;
 
 enum class DriveStopReason
 {
@@ -46,7 +45,8 @@ class Mothership
 public:
   virtual ~Mothership() = default;
 
-  virtual const std::array<int, ROBOT_COUNT> &getAbysses() const = 0;
+  virtual int getRobotCount() const = 0;
+  virtual const std::vector<int> &getAbysses() const = 0;
 
   virtual int getActiveRobot() const = 0;
   virtual int getRobotPosition(int robot) const = 0;

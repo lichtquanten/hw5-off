@@ -1,167 +1,148 @@
 #include "search.h"
 
 #include <algorithm>
-#include <cmath>
-#include <limits>
-#include <utility>
 
-#include "robot_neighbors.h"
-
-double Search::PriorityComponents::weightedScore() const
+namespace
 {
-    return (currentSignalStrength + aheadNeighborScore + unexploredNeighborhoodFraction) * progressMultiplier;
+  constexpr int SWITCH_MARGIN = 2;
+  constexpr int SWEEP_LENGTH = 5'000;
 }
 
-bool Search::RobotPriority::operator<(const RobotPriority& other) const
+bool Search::Rank::operator<(const Rank &other) const
 {
-    if (score != other.score)
-        return score > other.score;
-    return robot < other.robot;
+  if (signal != other.signal)
+  {
+    return signal > other.signal;
+  }
+  if (position != other.position)
+  {
+    return position < other.position;
+  }
+  return robot < other.robot;
 }
 
-Search::Search(Mothership& mothership) : mothership(mothership), aheadDebris(mothership)
+Search::Search(Mothership &mothership)
+    : mothership(mothership), robotCount(mothership.getRobotCount()), ends(robotCount),
+      positions(robotCount), signals(robotCount), debris(robotCount)
 {
-    for (int robot = 0; robot < ROBOT_COUNT; ++robot)
-        refreshPriority(robot);
+  for (int robot = 0; robot < robotCount; ++robot)
+  {
+    ends[robot] = std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);
+    positions[robot] = mothership.getRobotPosition(robot);
+    if (hasRemainingPath(robot))
+    {
+      waiting.insert(rank(robot));
+    }
+  }
 }
 
-int Search::pathEnd(int robot) const
+int Search::leftOf(int robot) const
 {
-    return std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);
+  return (robot + robotCount - 1) % robotCount;
+}
+
+int Search::rightOf(int robot) const
+{
+  return (robot + 1) % robotCount;
 }
 
 bool Search::hasRemainingPath(int robot) const
 {
-    return mothership.getRobotPosition(robot) < pathEnd(robot);
+  return positions[robot] < ends[robot];
 }
 
-int Search::currentSignalStrength(int robot) const
+Search::Rank Search::rank(int robot) const
 {
-    const int position = mothership.getRobotPosition(robot);
-    int signal = 0;
-    for (int path : robotAndNeighbors(robot))
-        signal += debrisHistory[path].countInRange(position - SIGNAL_RANGE, position + SIGNAL_RANGE);
-    return signal;
+  return {signals[robot], positions[robot], robot};
 }
 
-double Search::unexploredNeighborhoodFraction(int robot) const
+int Search::measureSignal(int robot) const
 {
-    const int first = mothership.getRobotPosition(robot) + 1;
-    const int last = std::min(pathEnd(robot), first + SIGNAL_RANGE - 1);
-    int available = 0;
-    int examined = 0;
-    for (int path : robotAndNeighbors(robot))
-    {
-        const int end = std::min(last, pathEnd(path));
-        if (end < first)
-            continue;
-        available += end - first + 1;
-        examined += std::max(0, std::min(end, mothership.getRobotPosition(path)) - first + 1);
-    }
-    return static_cast<double>(available - examined) / available;
+  int count = 0;
+  for (int path : {leftOf(robot), robot, rightOf(robot)})
+  {
+    const auto &found = debris[path];
+    count += std::upper_bound(found.begin(), found.end(), positions[robot] + SIGNAL_RANGE) -
+             std::lower_bound(found.begin(), found.end(), positions[robot] - SIGNAL_RANGE);
+  }
+  return count;
 }
 
-double Search::progressMultiplier(int robot) const
+void Search::refreshWaitingSignal(int robot)
 {
-    return std::sqrt(static_cast<double>(SIGNAL_RANGE) /
-                     (SIGNAL_RANGE + mothership.getRobotPosition(robot)));
-}
-
-Search::PriorityComponents Search::measurePriority(int robot)
-{
-    return {static_cast<double>(currentSignalStrength(robot)), aheadDebris.bestNeighborBucketScore(robot),
-            unexploredNeighborhoodFraction(robot), progressMultiplier(robot)};
-}
-
-void Search::setPriority(int robot, PriorityComponents components)
-{
-    auto entry = rankedRobots.extract({priorityComponents[robot].weightedScore(), robot});
-    priorityComponents[robot] = components;
-    if (!hasRemainingPath(robot))
-    {
-        aheadDebris.discardRobotCandidates(robot);
-        return;
-    }
-    if (entry.empty())
-        rankedRobots.insert({components.weightedScore(), robot});
-    else
-    {
-        entry.value().score = components.weightedScore();
-        rankedRobots.insert(std::move(entry));
-    }
-}
-
-void Search::refreshPriority(int robot)
-{
-    setPriority(robot, hasRemainingPath(robot) ? measurePriority(robot) : PriorityComponents{});
-}
-
-void Search::refreshAffectedPriorities(int robot, int previousPosition, bool discoveredDebris)
-{
-    refreshPriority(robot);
-    for (int neighbor : neighborsOf(robot))
-    {
-        if (discoveredDebris)
-            refreshPriority(neighbor);
-        else if (hasRemainingPath(neighbor))
-        {
-            const int frontier = mothership.getRobotPosition(neighbor);
-            const int observedEnd = std::min({frontier + SIGNAL_RANGE, pathEnd(neighbor), pathEnd(robot)});
-            if (previousPosition >= observedEnd || mothership.getRobotPosition(robot) <= frontier)
-                continue;
-            auto components = priorityComponents[neighbor];
-            components.unexploredNeighborhoodFraction = unexploredNeighborhoodFraction(neighbor);
-            setPriority(neighbor, components);
-        }
-    }
-}
-
-void Search::recordDiscovery(int robot)
-{
-    const int segment = mothership.getRobotPosition(robot);
-    debrisHistory[robot].recordDiscovery(segment);
-    aheadDebris.recordDiscovery(robot, segment);
-}
-
-void Search::discardPastDiscoveries(int path)
-{
-    int earliestSignal = std::numeric_limits<int>::max();
-    for (int observer : robotAndNeighbors(path))
-        if (hasRemainingPath(observer))
-            earliestSignal = std::min(earliestSignal, mothership.getRobotPosition(observer) - SIGNAL_RANGE);
-    debrisHistory[path].discardBefore(earliestSignal);
+  const int signal = measureSignal(robot);
+  if (signal == signals[robot])
+  {
+    return;
+  }
+  const bool isWaiting = hasRemainingPath(robot);
+  if (isWaiting)
+  {
+    waiting.erase(rank(robot));
+  }
+  signals[robot] = signal;
+  if (isWaiting)
+  {
+    waiting.insert(rank(robot));
+  }
 }
 
 SearchResult Search::findShipwreck()
 {
-    while (!rankedRobots.empty())
-    {
-        const int robot = rankedRobots.begin()->robot;
-        mothership.switchToRobot(robot);
-        const int previousPosition = mothership.getRobotPosition(robot);
-        int moved = 0;
-        bool discoveredDebris = false;
-        while (hasRemainingPath(robot) && moved < SIGNAL_RANGE)
-        {
-            const int safeDistance = pathEnd(robot) - mothership.getRobotPosition(robot);
-            const DriveResult result = mothership.driveActiveRobot(
-                std::min(MAX_SEGMENTS_PER_DRIVE, safeDistance));
-            moved += result.segmentsMoved;
-            if (result.reason == DriveStopReason::ShipwreckFound)
-                return SearchResult{true, Location{robot, mothership.getRobotPosition(robot)}};
-            if (result.reason == DriveStopReason::DebrisFound)
-            {
-                recordDiscovery(robot);
-                discoveredDebris = true;
-                break;
-            }
-        }
-        for (int path : robotAndNeighbors(robot))
-        {
-            discardPastDiscoveries(path);
-            aheadDebris.discardPassedBuckets(path);
-        }
-        refreshAffectedPriorities(robot, previousPosition, discoveredDebris);
-    }
+  if (waiting.empty())
+  {
     return SearchResult{false, Location{}};
+  }
+  int active = waiting.begin()->robot;
+  waiting.erase(waiting.begin());
+  mothership.switchToRobot(active);
+  int drivenSinceSwitch = 0;
+  while (true)
+  {
+    const DriveResult result = mothership.driveActiveRobot(
+        std::min(MAX_SEGMENTS_PER_DRIVE, ends[active] - positions[active]));
+    positions[active] += result.segmentsMoved;
+    drivenSinceSwitch += result.segmentsMoved;
+    if (result.reason == DriveStopReason::ShipwreckFound)
+    {
+      return SearchResult{true, Location{active, positions[active]}};
+    }
+    if (result.reason == DriveStopReason::DebrisFound)
+    {
+      debris[active].push_back(positions[active]);
+      for (int neighbor : {leftOf(active), rightOf(active)})
+      {
+        if (neighbor != active)
+        {
+          refreshWaitingSignal(neighbor);
+        }
+      }
+    }
+    signals[active] = measureSignal(active);
+
+    const bool hasPath = hasRemainingPath(active);
+    const bool stillUseful = hasPath && (signals[active] > 0 || drivenSinceSwitch < SWEEP_LENGTH);
+    const bool hasRival = !waiting.empty();
+    if (stillUseful && (!hasRival || waiting.begin()->signal - signals[active] < SWITCH_MARGIN))
+    {
+      continue;
+    }
+    if (hasPath && (!hasRival || rank(active) < *waiting.begin()))
+    {
+      continue;
+    }
+    if (!hasRival)
+    {
+      return SearchResult{false, Location{}};
+    }
+    const int next = waiting.begin()->robot;
+    waiting.erase(waiting.begin());
+    if (hasPath)
+    {
+      waiting.insert(rank(active));
+    }
+    mothership.switchToRobot(next);
+    active = next;
+    drivenSinceSwitch = 0;
+  }
 }

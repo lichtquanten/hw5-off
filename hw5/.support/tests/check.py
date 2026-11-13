@@ -1,4 +1,3 @@
-import argparse
 import io
 import os
 import sys
@@ -11,10 +10,8 @@ from runner.processes import CheckError
 
 def main() -> int:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, 'utf-8', 'replace', line_buffering=True)
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--test', default=os.environ.get('TEST', ''))
     try:
-        selection = resolve_test_selection(parser.parse_args().test)
+        selection = resolve_test_selection(os.environ.get('TEST', ''))
         results = CheckRunner(selection).run()
     except KeyboardInterrupt:
         print('Test run interrupted.', file=sys.stderr)

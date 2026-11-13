@@ -16,11 +16,10 @@ smoke-test: all
 	./build/shipwreck
 
 test:
-	@python3 .support/tests/check.py
+	@python3 -B .support/tests/check.py
 
 clean:
 	rm -rf build
 	find . -type d -name __pycache__ -prune -exec rm -rf {} +
-	find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 
 .PHONY: all smoke-test test clean

@@ -1,23 +1,23 @@
 from pathlib import Path
-import shutil
 import sys
 
 WORKSPACE = Path(__file__).resolve().parents[2]
 TEST_SUITE = WORKSPACE / 'hw5/.support/tests'
 sys.path.insert(0, str(TEST_SUITE))
 
+from runner.catalog import REFERENCES
 from runner.processes import CheckError, ProcessError, run_process, write_process_log
 
 
-def build_reference(strategy: str, references_directory: Path) -> None:
-    build = WORKSPACE / 'build/references' / strategy
+def build_reference(directory: str, build: Path) -> None:
     build.mkdir(parents=True, exist_ok=True)
     log_path = build / 'build.log'
     log_path.write_text('')
+    solution = WORKSPACE / '.dev/references' / directory / 'src'
     commands = (
-        ['cmake', '-H' + str(references_directory), '-B' + str(build), f'-DREFERENCE={strategy}'],
+        ['cmake', '-H' + str(TEST_SUITE), '-B' + str(build), '-DSOLUTION_DIR=' + str(solution)],
         ['cmake', '--build', str(build)],
-        [str(build / 'reference_checks'), '--gtest_filter=*'],
+        [str(build / 'basic_tests')],
     )
     for command in commands:
         try:
@@ -28,19 +28,15 @@ def build_reference(strategy: str, references_directory: Path) -> None:
         write_process_log(log_path, command[0], process.output)
         if process.returncode:
             raise CheckError(process.output)
-    destination = TEST_SUITE / 'references' / strategy / 'bin/shipwreck_reference'
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(build / 'shipwreck_reference', destination)
-    print(f'Built {destination}')
 
 
 def main() -> int:
-    references_directory = Path(__file__).resolve().parent
+    output = Path(sys.argv[1]).resolve()
     failed = False
-    for name in ('instructor', 'round_robin'):
-        print(f'Building {name.replace("_", " ").title()}...', flush=True)
+    for strategy, directory in REFERENCES.items():
+        print(f'Building {strategy}...', flush=True)
         try:
-            build_reference(name, references_directory)
+            build_reference(directory, output / directory)
         except (CheckError, OSError) as error:
             print(error, file=sys.stderr)
             failed = True

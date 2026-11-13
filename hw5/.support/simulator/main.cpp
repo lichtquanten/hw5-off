@@ -1,7 +1,3 @@
-/*
- * PROVIDED CODE - DO NOT EDIT
- */
-
 #include "simulated_mothership.h"
 #include "scenario.h"
 #include "search.h"
@@ -17,13 +13,13 @@ namespace
   {
     Scenario scenario;
 
-    scenario.abysses.fill(1'001);
+    scenario.abysses.assign(DEFAULT_ROBOT_COUNT, 1'001);
 
     scenario.debris = {
         {0, 80},
         {0, 220},
         {1, 260},
-        {ROBOT_COUNT - 1, 280},
+        {DEFAULT_ROBOT_COUNT - 1, 280},
     };
     scenario.shipwreck = Location{0, 300};
 

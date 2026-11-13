@@ -1,8 +1,12 @@
 import sys
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Sequence, Tuple
 
 from .catalog import TESTS
 from .results import TestResult, calculate_grade
+
+
+COUNT_UNITS = ((1_000_000_000, 'B'), (1_000_000, 'M'), (1_000, 'K'))
+MEMORY_UNITS = ((1024 ** 3, ' GiB'), (1024 ** 2, ' MiB'), (1024, ' KiB'))
 
 
 class TerminalStyle(NamedTuple):
@@ -20,27 +24,33 @@ class TerminalStyle(NamedTuple):
         return f'{self.success}PASS{self.reset}' if passed else f'{self.failure}FAIL{self.reset}'
 
 
-def format_count(value: Optional[int]) -> str:
+def format_scaled(value: Optional[int], units: Sequence[Tuple[int, str]], base_unit: str) -> str:
     if value is None:
         return '—'
-    rounded = float(f'{value:.4g}')
-    for scale, suffix in ((1_000_000_000, 'B'), (1_000_000, 'M'), (1_000, 'K')):
-        if rounded >= scale:
-            return f'{value / scale:.4g}{suffix}'
-    return str(value)
+    for scale, unit in units:
+        if value >= 10 * scale:
+            return f'{value / scale:.0f}{unit}'
+    return f'{value:.0f}{base_unit}'
+
+
+def format_count(value: Optional[int]) -> str:
+    return format_scaled(value, COUNT_UNITS, '')
 
 
 def format_memory(value: Optional[int]) -> str:
-    if value is None:
-        return '—'
-    for scale, unit in ((1024 ** 3, 'GiB'), (1024 ** 2, 'MiB'), (1024, 'KiB')):
-        if value >= scale:
-            return f'{value / scale:.0f} {unit}'
-    return f'{value} B'
+    return format_scaled(value, MEMORY_UNITS, ' B')
 
 
 def format_runtime(seconds: Optional[float]) -> str:
-    return '—' if seconds is None else f'{seconds:.2f} s'
+    return '—' if seconds is None else f'{seconds * 1000:.0f} ms'
+
+
+def format_ratio(ratio: float) -> str:
+    rounded = float(f'{ratio:.2g}')
+    return f'{rounded:g}×'
+
+
+FORMATTERS = {'Ticks': format_count, 'Runtime': format_runtime, 'Peak memory': format_memory}
 
 
 def print_basic_tests(results: List[TestResult], style: TerminalStyle) -> None:
@@ -58,32 +68,24 @@ def table_row(label: str, ticks: str, runtime: str, memory: str) -> str:
 
 def print_comparisons(yours: TestResult) -> None:
     print('─' * len(table_row('', '', '', '')))
-    for strategy in ('Instructor', 'Round Robin'):
-        reference = next((result for result in yours.references if result.strategy == strategy), None)
+    for reference in yours.references:
         measurements = (
-            (yours.ticks, reference.ticks if reference else None),
-            (yours.runtime_seconds, reference.runtime_seconds if reference else None),
-            (yours.peak_memory_bytes, reference.peak_memory_bytes if reference else None),
+            (yours.ticks, reference.ticks),
+            (yours.runtime_seconds, reference.runtime_seconds),
+            (yours.peak_memory_bytes, reference.peak_memory_bytes),
         )
         comparisons = [
-            f'{mine / theirs:.2f}×'
-            if yours.passed and reference is not None and reference.passed
-            and mine is not None and theirs else '—'
+            format_ratio(mine / theirs)
+            if yours.passed and reference.passed and mine is not None and theirs else '—'
             for mine, theirs in measurements
         ]
-        print(table_row('Yours / ' + strategy, *comparisons))
+        print(table_row('Yours / ' + reference.strategy, *comparisons))
 
 
 def print_checks(result: TestResult, style: TerminalStyle) -> None:
     checks = [('Correctness:', result.passed)]
     for check in result.performance_checks:
-        if check.label == 'Ticks':
-            limit = format_count(check.limit)
-        elif check.label == 'Runtime':
-            limit = f'{check.limit:g}s'
-        else:
-            limit = format_memory(check.limit)
-        checks.append((f'{check.label} (<{limit}):', check.passed))
+        checks.append((f'{check.label} (<{FORMATTERS[check.label](check.limit)}):', check.passed))
     width = max(len(label) for label, _ in checks)
     for label, passed in checks:
         print(f'{label:<{width}}  {style.status(passed)}')
@@ -95,18 +97,17 @@ def print_performance_tests(results: List[TestResult], style: TerminalStyle) -> 
     print('\n' + style.heading + 'Performance Tests' + style.reset)
     for result in results:
         title = f'{result.test.display_id} {result.test.title}'
-        if result.scenario_count is not None and result.scenario_count > 1:
-            title += f' — {result.scenario_count} scenarios'
         print(f'\n{style.heading}{title}{style.reset}\n')
         print_checks(result, style)
-        heading = table_row('', 'Ticks', 'Runtime', 'Peak memory')
         print()
-        print(style.heading + heading + style.reset)
+        print(style.heading + table_row('', 'Ticks', 'Runtime', 'Peak memory') + style.reset)
         for measurement in [result, *result.references]:
-            ticks = format_count(measurement.ticks)
-            runtime = format_runtime(measurement.runtime_seconds)
-            memory = format_memory(measurement.peak_memory_bytes)
-            print(table_row(measurement.strategy, ticks, runtime, memory))
+            print(table_row(
+                measurement.strategy,
+                format_count(measurement.ticks),
+                format_runtime(measurement.runtime_seconds),
+                format_memory(measurement.peak_memory_bytes),
+            ))
         print_comparisons(result)
 
 
@@ -122,12 +123,13 @@ def print_failures(results: List[TestResult], style: TerminalStyle) -> None:
 
 def print_results(results: List[TestResult]) -> None:
     style = TerminalStyle.detect()
+    basic = [result for result in results if not result.test.is_performance]
+    performance = [result for result in results if result.test.is_performance]
     print('\nTo run one test: make test TEST=<number>')
-    print_basic_tests([result for result in results if not result.test.is_performance], style)
-    print_performance_tests([result for result in results if result.test.is_performance], style)
+    print_basic_tests(basic, style)
+    print_performance_tests(performance, style)
     print_failures(results, style)
     print(f'\nCorrectness: {sum(result.passed for result in results)}/{len(results)} passed')
-    performance = [result for result in results if result.test.is_performance]
     if performance:
         print(f'Performance: {sum(result.earns_credit for result in performance)}/{len(performance)} passed')
     credits = sum(result.earns_credit for result in results)

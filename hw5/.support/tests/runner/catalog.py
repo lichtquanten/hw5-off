@@ -20,32 +20,44 @@ class TestDefinition(NamedTuple):
 
 
 TESTS = (
-    TestDefinition(1, 'NoReachablePaths', 'All Paths Blocked'),
-    TestDefinition(2, 'EmptyUnequalPaths', 'Empty Unequal Paths'),
-    TestDefinition(3, 'EveryRobot', 'Wreck on Each Robot Path'),
-    TestDefinition(4, 'SimpleDebris', 'Search with Debris'),
-    TestDefinition(5, 'BeforeAbyss', 'Wreck Before Abyss'),
-    TestDefinition(6, 'BeyondAbyss', 'Wreck Beyond Abyss'),
-    TestDefinition(7, 'TetherBoundary', 'Tether Boundary'),
-    TestDefinition(8, 'SeededScenarios', 'Mixed Search Scenarios (10 cases)'),
+    TestDefinition(1, 'EveryRobot', 'Wreck on Any Path'),
+    TestDefinition(2, 'SimpleDebris', 'Search with Debris'),
+    TestDefinition(3, 'BeforeAbyss', 'Wreck Before Abyss'),
+    TestDefinition(4, 'BeyondAbyss', 'Wreck Beyond Abyss'),
+    TestDefinition(5, 'TetherBoundary', 'Tether Boundary'),
+    TestDefinition(6, 'SeededScenarios', 'Random Scenarios'),
     TestDefinition(
-        9, 'ClusteredDebris', 'Clustered Debris', is_performance=True,
-        max_ticks=10_000_000, max_runtime_seconds=8, max_memory_bytes=2 * 1024 * 1024,
+        7, 'ClusteredDebris', 'Strong Wreck Signal', is_performance=True,
+        max_ticks=55_000_000, max_runtime_seconds=2, max_memory_bytes=2 * 1024 * 1024,
     ),
     TestDefinition(
-        10, 'StrongFalseLeads', 'Strong False Leads', is_performance=True,
-        max_ticks=12_000_000, max_runtime_seconds=8, max_memory_bytes=2 * 1024 * 1024,
+        8, 'StrongFalseLeads', 'Strong False Leads', is_performance=True,
+        max_ticks=62_000_000, max_runtime_seconds=2, max_memory_bytes=2 * 1024 * 1024,
     ),
     TestDefinition(
-        11, 'WeakWreckSignal', 'Weak Wreck Signal', is_performance=True,
-        max_ticks=16_000_000, max_runtime_seconds=8, max_memory_bytes=2 * 1024 * 1024,
+        9, 'WeakWreckSignal', 'Weak Wreck Signal', is_performance=True,
+        max_ticks=77_000_000, max_runtime_seconds=2, max_memory_bytes=2 * 1024 * 1024,
     ),
     TestDefinition(
-        12, 'ExhaustiveSearch', 'No Wreck, Full Search', is_performance=True,
-        max_runtime_seconds=8, max_memory_bytes=4 * 1024 * 1024,
+        10, 'SingleApproachTrail',
+        'Debris Strongest on One Path (Wreck’s Path or Adjacent Path)', is_performance=True,
+        max_ticks=65_000_000, max_runtime_seconds=2, max_memory_bytes=2 * 1024 * 1024,
+    ),
+    TestDefinition(
+        11, 'VariedWreckSites', 'Small and Large Debris Clusters', is_performance=True,
+        max_ticks=117_000_000, max_runtime_seconds=2, max_memory_bytes=2 * 1024 * 1024,
+    ),
+    TestDefinition(
+        12, 'ExhaustiveSearch', 'No Wreck, Long Paths', is_performance=True,
+        max_runtime_seconds=5, max_memory_bytes=2 * 1024 * 1024,
+    ),
+    TestDefinition(
+        13, 'ManyRobotsSearch', 'No Wreck, 100k Robots', is_performance=True,
+        max_runtime_seconds=5, max_memory_bytes=32 * 1024 * 1024,
     ),
 )
 TESTS_BY_NUMBER = {test.number: test for test in TESTS}
+REFERENCES = {'Instructor': 'instructor', 'Round Robin': 'round_robin'}
 
 
 def resolve_test_selection(selection: str) -> Optional[TestDefinition]:

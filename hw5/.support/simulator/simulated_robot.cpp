@@ -1,7 +1,3 @@
-/*
- * PROVIDED CODE - DO NOT EDIT
- */
-
 #include "simulated_robot.h"
 
 #include <algorithm>
@@ -9,7 +5,7 @@
 #include <utility>
 
 SimulatedRobot::SimulatedRobot(int reachableEnd, std::vector<int> debrisSegments,
-                             std::optional<int> shipwreckSegment)
+                               std::optional<int> shipwreckSegment)
     : reachableEnd(reachableEnd), debrisSegments(std::move(debrisSegments)),
       shipwreckSegment(shipwreckSegment)
 {
@@ -40,7 +36,6 @@ DriveResult SimulatedRobot::advance(int maxSegments)
     destination = std::min(destination, *shipwreckSegment);
   }
 
-  // Only an earlier discovery can stop an unsafe request before the hazard.
   if (destination > reachableEnd)
   {
     throw std::runtime_error(reachableEnd < TETHER_LENGTH

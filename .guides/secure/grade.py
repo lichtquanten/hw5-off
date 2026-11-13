@@ -18,7 +18,6 @@ MAX_FEEDBACK_BYTES = 950_000
 sys.dont_write_bytecode = True
 if not COURSE_SUPPORT.is_dir():
     raise RuntimeError('Course grading files are missing. Run make export before publishing.')
-sys.path.insert(0, str(SECURE_DIRECTORY))
 sys.path.insert(0, str(COURSE_SUPPORT / 'tests'))
 
 from runner.execution import CheckRunner

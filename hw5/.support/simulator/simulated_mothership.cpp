@@ -1,7 +1,3 @@
-/*
- * PROVIDED CODE - DO NOT EDIT
- */
-
 #include "simulated_mothership.h"
 
 #include "scenario.h"
@@ -12,17 +8,18 @@
 
 namespace
 {
-  std::array<SimulatedRobot, ROBOT_COUNT> createRobots(const Scenario &scenario)
+  std::vector<SimulatedRobot> createRobots(const Scenario &scenario)
   {
-    std::array<std::vector<int>, ROBOT_COUNT> debrisByRobot;
-    std::array<std::size_t, ROBOT_COUNT> debrisCounts{};
+    const int robotCount = static_cast<int>(scenario.abysses.size());
+    std::vector<std::vector<int>> debrisByRobot(robotCount);
+    std::vector<std::size_t> debrisCounts(robotCount);
 
     for (Location debris : scenario.debris)
     {
       ++debrisCounts[debris.robot];
     }
 
-    for (int robotIndex = 0; robotIndex < ROBOT_COUNT; ++robotIndex)
+    for (int robotIndex = 0; robotIndex < robotCount; ++robotIndex)
     {
       debrisByRobot[robotIndex].reserve(debrisCounts[robotIndex]);
     }
@@ -32,16 +29,16 @@ namespace
       debrisByRobot[debris.robot].push_back(debris.segment);
     }
 
-    std::array<SimulatedRobot, ROBOT_COUNT> robots;
-    for (int robotIndex = 0; robotIndex < ROBOT_COUNT; ++robotIndex)
+    std::vector<SimulatedRobot> robots;
+    robots.reserve(robotCount);
+    for (int robotIndex = 0; robotIndex < robotCount; ++robotIndex)
     {
       std::optional<int> shipwreckSegment;
       if (scenario.shipwreck && scenario.shipwreck->robot == robotIndex)
       {
         shipwreckSegment = scenario.shipwreck->segment;
       }
-      robots[robotIndex] = SimulatedRobot(
-          scenario.abysses[robotIndex] - 1, std::move(debrisByRobot[robotIndex]), shipwreckSegment);
+      robots.emplace_back(scenario.abysses[robotIndex] - 1, std::move(debrisByRobot[robotIndex]), shipwreckSegment);
     }
 
     return robots;
@@ -55,7 +52,12 @@ SimulatedMothership::SimulatedMothership(const Scenario &scenario)
   robots = createRobots(scenario);
 }
 
-const std::array<int, ROBOT_COUNT> &SimulatedMothership::getAbysses() const
+int SimulatedMothership::getRobotCount() const
+{
+  return static_cast<int>(robots.size());
+}
+
+const std::vector<int> &SimulatedMothership::getAbysses() const
 {
   return abysses;
 }
@@ -67,7 +69,7 @@ int SimulatedMothership::getActiveRobot() const
 
 int SimulatedMothership::getRobotPosition(int robotIndex) const
 {
-  validateRobotIndex(robotIndex);
+  validateRobotIndex(robotIndex, getRobotCount());
   return robots[robotIndex].getPosition();
 }
 
@@ -78,7 +80,7 @@ long long SimulatedMothership::getElapsedTicks() const
 
 void SimulatedMothership::switchToRobot(int robotIndex)
 {
-  validateRobotIndex(robotIndex);
+  validateRobotIndex(robotIndex, getRobotCount());
 
   if (robotIndex != activeRobotIndex)
   {

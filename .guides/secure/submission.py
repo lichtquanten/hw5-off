@@ -11,11 +11,10 @@ class SubmissionError(Exception):
 
 
 def run_git(directory: Path, arguments: Sequence[str], failure_message: str) -> str:
-    environment = dict(os.environ, GIT_TERMINAL_PROMPT='0',
-                       GIT_SSH_COMMAND='ssh -o BatchMode=yes -o ConnectTimeout=15')
+    environment = dict(os.environ, GIT_TERMINAL_PROMPT='0')
     try:
         result = subprocess.run(
-            ['git', *arguments], cwd=str(directory), env=environment,
+            ['git', *arguments], cwd=str(directory), env=environment, stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             universal_newlines=True, errors='replace', check=True, timeout=45,
         )
@@ -67,8 +66,6 @@ def install_course_support(checkout: Path, support: Path) -> None:
 
 def prepare_submission(project: Path, sha: str, checkout: Path, support: Path) -> str:
     sha = validate_sha(sha)
-    if not all((support / name).is_file() for name in ('tests/CMakeLists.txt', 'mothership.h')):
-        raise RuntimeError('Course grading files are missing. Run make export before publishing.')
     origin = repository_origin(project)
     commit = clone_commit(project, origin, sha, checkout)
     if not all((checkout / name).is_file() for name in ('search.cpp', 'search.h')):

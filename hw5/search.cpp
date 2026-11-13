@@ -15,7 +15,7 @@ Search::Search(Mothership &mothership)
 SearchResult Search::findShipwreck()
 {
   /* TOY APPROACH - Depth First Search - (CHANGE OR REPLACE) */
-  for (int robot = 0; robot < ROBOT_COUNT; ++robot)
+  for (int robot = 0; robot < mothership.getRobotCount(); ++robot)
   {
     const int lastSegment =
         std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);

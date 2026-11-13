@@ -164,10 +164,10 @@ class SubmissionTests(unittest.TestCase):
         self.break_newer_code()
         receipt, output = self.run_command({'CODIO_AUTOGRADE_ENV': assignment_data(self.sha)})
         self.assertEqual(receipt['api'], 'assignment')
-        self.assertEqual(receipt['score'], 75.0)
+        self.assertAlmostEqual(receipt['score'], 100 * 8 / 13)
         self.assertIn('Graded commit: ' + self.sha, receipt['feedback'])
-        self.assertIn('Correctness: 12/12 passed', receipt['feedback'])
-        self.assertIn('Score: 75.0%', output)
+        self.assertIn('Correctness: 13/13 passed', receipt['feedback'])
+        self.assertIn('Score: 61.5% (8/13 credits)', output)
 
     def test_assessment_command_reports_invalid_submission_as_zero(self):
         receipt, _ = self.run_command({'CODIO_FREE_TEXT_ANSWER': 'main',

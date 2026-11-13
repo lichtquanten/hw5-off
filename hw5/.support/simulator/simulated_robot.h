@@ -1,7 +1,3 @@
-/*
- * PROVIDED CODE - DO NOT EDIT
- */
-
 #pragma once
 
 #include <cstddef>
@@ -13,7 +9,6 @@
 class SimulatedRobot
 {
 public:
-  SimulatedRobot() = default;
   SimulatedRobot(int reachableEnd, std::vector<int> debrisSegments,
                  std::optional<int> shipwreckSegment);
 
@@ -23,7 +18,7 @@ public:
 
 private:
   int position = 0;
-  int reachableEnd = TETHER_LENGTH;
+  int reachableEnd;
   std::vector<int> debrisSegments;
   std::size_t nextDebrisIndex = 0;
   std::optional<int> shipwreckSegment;

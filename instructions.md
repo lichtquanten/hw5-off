@@ -4,7 +4,7 @@ You must find a shipwreck on the ocean floor!
 
 
 
-A ship sank to the ocean floor a long time ago. You're on a mothership, with 100 underwater robots to use for the search.
+A ship sank to the ocean floor a long time ago. You're on a mothership, with N underwater robots to use for the search.
 
 As the ship sank, it scattered debris along the seafloor. The debris can be used to aid the search.
 
@@ -18,7 +18,7 @@ The search robots start evenly spaced in a circle around the mothership. Each ro
 
 Each robot's path is divided into segments. Each segment takes 1 tick (a unit of time) to drive.
 
-The shipwreck occupies one segment and is reachable by at most one robot.
+The shipwreck sits at one segment and is reachable by at most one robot.
 
 You can drive one robot at a time. When instructed to drive, a robot drives forward for up to 100 segments, stopping sooner if it encounters debris or the shipwreck.
 
@@ -27,9 +27,11 @@ After driving, the robot will report finding:
 - debris, or
 - the shipwreck.
 
-After driving a robot, you can choose to drive the same robot again, or switch to another robot. Switching to another robot takes 10 ticks.
+After driving a robot, you can choose to drive the same robot again, or switch to another robot. Switching to another robot takes 200 ticks.
 
 Each robot is attached to the mothership by a tether of length 10 million segments. Driving beyond the tether length causes failure.
+
+Typically, N=100, i.e. there will be 100 robots.
 
 ## Abysses
 
@@ -65,19 +67,21 @@ The assignment will also be evaluated on:
 
 Your solution will be evaluated against fixed thresholds for search time (ticks), runtime, and memory, as shown by `make test`. That said, you can and should develop your program for efficiency beyond this fixed threshold!
 
+For most test cases, N=100, i.e. there are 100 robots. One test case, however, stress tests your program against 100k+ robots. For this test case, we care to see that the runtime and memory use of your program scales reasonably as the number of robots grows.
+
 
 ## Summary Info
 
-- Num robots: 100
+- Num robots: N (typically 100)
 - Speed: 1 segment/tick
 - Max distance per drive: 100 segments
-- Cost to switch robots: 10 ticks
+- Cost to switch robots: 200 ticks
 - Tether length: 10 million segments
 - Signal range: Within 500 segments, along the robot's own path and its two neighboring paths
 
 # Developing Your Approach
 
-You should try to find the shipwreck as quickly as possible, if it is findable. You should ground your approach in your judgment/intuition and your understanding of what tradeoffs in efficient data storage + access allows. This assignment is not about coming up with a mathematically optimal approach, nor is that possible given the information provided.
+You should try to find the shipwreck as quickly as possible, if it is findable. You should ground your approach in your judgment/intuition, along with your understanding of what tradeoffs in efficient data storage + access allows. This assignment is not about coming up with a mathematically optimal approach, nor is that possible given the information provided.
 
 You have two key questions to consider:
 
@@ -113,9 +117,7 @@ Look at `hw5/examples/using_data_structures.cpp`. You will find examples of how 
 
 ## Editing Code
 
-Implement your search in `findShipwreck()`. Return `SearchResult`.
-Set `isFound` to `true` and fill in `location` when the shipwreck is found.
-Otherwise, return `SearchResult{false, Location{}}`. The `location` field is ignored when `isFound` is `false`.
+Implement your search in `findShipwreck()`. Return `SearchResult`. Set `isFound` to `true` and fill in `location` when the shipwreck is found. Otherwise, return `SearchResult{false, Location{}}` if the shipwreck is not found.
 
 You can add any data members or member functions to the `Search` class. You will likely want to add more classes and files. You do not need to update the Makefile when adding files to `hw5`. The Makefile is already configured to find `.cpp` files in `hw5/`.
 
@@ -146,12 +148,10 @@ To run the full test suite, including correctness and performance tests:
 make test
 ```
 
-The full test suite may take up to a minute or so to run.
+The full test suite may take up to 5 minutes.
 
 The full test suite compares your solution to two reference solutions: a round-robin solution and an instructor solution.
 
-The performance tests cover clustered debris, strong false leads, weak wreck signals, and a search with no wreck on paths of 1 million segments. Reference runtimes and ticks are measured during each run; reference peak memory comes from profiles shipped with the reference binaries. Your peak memory is measured during each run.
+Round-robin solution: Advances each robot 100 segments, one after the other, stopping before abysses and at the shipwreck.
 
-Round-robin solution: Advances each robot one after the other, without considering debris, until finding the shipwreck.
-
-Instructor solution: Implementation not shared but uses defensible search heuristics and makes effective use of data structures. It is one of many reasonable solutions. You can outperform the instructor solution!
+Instructor solution: Implementation not shared. This is one of many reasonable solutions. You can outperform the instructor solution!

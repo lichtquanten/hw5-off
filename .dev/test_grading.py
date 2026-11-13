@@ -12,7 +12,6 @@ WORKSPACE = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(WORKSPACE / "hw5/.support/tests"))
 sys.path.insert(0, str(WORKSPACE / ".guides/secure"))
 
-import grade
 from runner.catalog import REFERENCES, TESTS, resolve_test_selection
 from runner.execution import CheckRunner
 from runner.output import (
@@ -48,6 +47,10 @@ def render(results):
     with redirect_stdout(output):
         print_results(results)
     return output.getvalue()
+
+
+def passing_case(test, strategy, command):
+    return TestResult(test, strategy, True)
 
 
 class GradingTests(unittest.TestCase):
@@ -148,27 +151,22 @@ class GradingTests(unittest.TestCase):
     def test_compact_units(self):
         for value, expected in (
             (None, "—"),
-            (0, "0"),
-            (9_999, "9999"),
-            (10_000, "10K"),
-            (4_440_227, "4440K"),
+            (0, "0M"),
+            (999_999, "1M"),
             (22_908_711, "23M"),
-            (700_000_000, "700M"),
-            (1_020_318_110, "1020M"),
+            (1_040_070_400, "1,040M"),
         ):
             with self.subTest(value=value):
                 self.assertEqual(format_count(value), expected)
         for value, expected in (
             (None, "—"),
-            (512, "512 B"),
-            (256 * 1024, "256 KiB"),
-            (int(1.6 * 1024 * 1024), "1638 KiB"),
-            (4 * 1024 * 1024, "4096 KiB"),
-            (30 * 1024 * 1024, "30 MiB"),
+            (803 * 1024, "803 KiB"),
+            (int(1.6 * 1024 * 1024), "1,638 KiB"),
+            (14_174 * 1024, "14,174 KiB"),
         ):
             with self.subTest(value=value):
                 self.assertEqual(format_memory(value), expected)
-        for value, expected in ((None, "—"), (0.0134, "13 ms"), (8, "8000 ms")):
+        for value, expected in ((None, "—"), (0.0134, "13 ms"), (2, "2,000 ms")):
             with self.subTest(value=value):
                 self.assertEqual(format_runtime(value), expected)
         for value, expected in (
@@ -191,11 +189,11 @@ class GradingTests(unittest.TestCase):
             "Correctness:",
             f"Ticks (<{format_count(CLUSTERED_DEBRIS.max_ticks)}):",
             "Runtime (<2 s):",
-            "Peak memory (<2048 KiB):",
+            "Peak memory (<2 MiB):",
             "Yours / Instructor",
             "Yours / Round Robin",
             "1×",
-            "Credit: 1/1",
+            "Checks: 1/1",
         ):
             self.assertIn(text, output)
         self.assertNotIn("Score:", output)
@@ -224,11 +222,13 @@ class GradingTests(unittest.TestCase):
         self.assertIn(f"Correctness: {total}/{total} passed", output)
         self.assertIn(f"Performance: {performance - 1}/{performance} passed", output)
         self.assertIn(
-            f"Score: {100 * (total - 1) / total:.1f}% ({total - 1}/{total} credits)",
+            f"Score: {100 * (total - 1) / total:.1f}% ({total - 1}/{total} checks)",
             output,
         )
 
     def test_grader_and_test_output_use_the_same_score_and_feedback(self):
+        import grade
+
         by_number = all_passing()
         by_number[
             CLUSTERED_DEBRIS.number
@@ -249,16 +249,7 @@ class GradingTests(unittest.TestCase):
                 strategy: {result.test.full_name: 5678 + index}
                 for index, strategy in enumerate(REFERENCES)
             }))
-            with (
-                patch.object(
-                    runner,
-                    "run_case",
-                    side_effect=lambda test, strategy, command: TestResult(
-                        test, strategy, True
-                    ),
-                ),
-                redirect_stdout(io.StringIO()),
-            ):
+            with patch.object(runner, "run_case", side_effect=passing_case), redirect_stdout(io.StringIO()):
                 runner.run_references([result])
         self.assertEqual(
             [reference.peak_memory_bytes for reference in result.references],
@@ -266,7 +257,7 @@ class GradingTests(unittest.TestCase):
         )
 
     def test_unavailable_reference_memory_does_not_change_student_credit(self):
-        for contents in (None, "{}", json.dumps({strategy: {} for strategy in REFERENCES})):
+        for contents in (None, "not json", "{}", json.dumps({strategy: {} for strategy in REFERENCES})):
             with self.subTest(contents=contents):
                 self.check_unavailable_reference_memory(contents)
 
@@ -277,16 +268,7 @@ class GradingTests(unittest.TestCase):
             runner.reference_memory_path = Path(directory) / "memory.json"
             if contents is not None:
                 runner.reference_memory_path.write_text(contents)
-            with (
-                patch.object(
-                    runner,
-                    "run_case",
-                    side_effect=lambda test, strategy, command: TestResult(
-                        test, strategy, True
-                    ),
-                ),
-                redirect_stdout(io.StringIO()),
-            ):
+            with patch.object(runner, "run_case", side_effect=passing_case), redirect_stdout(io.StringIO()):
                 runner.run_references([result])
         self.assertTrue(result.earns_credit)
         for reference in result.references:
@@ -299,16 +281,16 @@ class GradingTests(unittest.TestCase):
         performance.references = [passing_result(CLUSTERED_DEBRIS)]
         failed = TestResult(STRONG_FALSE_LEADS, "Yours", False)
         runner = CheckRunner()
-        with (
-            patch("runner.execution.profile_peak_memory", return_value=1234) as profile,
-            redirect_stdout(io.StringIO()),
-        ):
+        profile_patch = patch("runner.execution.profile_peak_memory", return_value=1234)
+        with profile_patch as profile, redirect_stdout(io.StringIO()):
             runner.profile_memory([basic, performance, failed])
         self.assertEqual(profile.call_count, 1)
         self.assertIs(profile.call_args[0][1], performance.test)
         self.assertEqual(performance.peak_memory_bytes, 1234)
 
     def test_build_failure_returns_zero(self):
+        import grade
+
         with patch.object(grade, "CheckRunner") as runner:
             runner.return_value.run.side_effect = BuildError("Compiler error.")
             score, feedback = grade.evaluate_solution(WORKSPACE / "hw5")

@@ -27,11 +27,16 @@ private:
   std::vector<int> signals;
   std::vector<std::vector<int>> debris;
   AVLSet<Rank> waiting;
+  int active = -1;
+  int drivenSinceSwitch = 0;
 
   int leftOf(int robot) const;
   int rightOf(int robot) const;
   bool hasRemainingPath(int robot) const;
+  bool isWaiting(int robot) const;
   Rank rank(int robot) const;
   int measureSignal(int robot) const;
-  void refreshWaitingSignal(int robot);
+  void refreshSignal(int robot);
+  bool shouldKeepDriving() const;
+  void switchTo(int robot);
 };

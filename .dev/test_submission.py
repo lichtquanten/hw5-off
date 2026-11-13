@@ -167,7 +167,7 @@ class SubmissionTests(unittest.TestCase):
         self.assertAlmostEqual(receipt['score'], 100 * 8 / 13)
         self.assertIn('Graded commit: ' + self.sha, receipt['feedback'])
         self.assertIn('Correctness: 13/13 passed', receipt['feedback'])
-        self.assertIn('Score: 61.5% (8/13 credits)', output)
+        self.assertIn('Score: 61.5% (8/13 checks)', output)
 
     def test_assessment_command_reports_invalid_submission_as_zero(self):
         receipt, _ = self.run_command({'CODIO_FREE_TEXT_ANSWER': 'main',

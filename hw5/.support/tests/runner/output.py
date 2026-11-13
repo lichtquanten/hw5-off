@@ -1,12 +1,8 @@
 import sys
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import List, NamedTuple, Optional
 
 from .catalog import TESTS
 from .results import TestResult, calculate_grade
-
-
-COUNT_UNITS = ((1_000_000_000, 'B'), (1_000_000, 'M'), (1_000, 'K'))
-MEMORY_UNITS = ((1024 ** 3, ' GiB'), (1024 ** 2, ' MiB'), (1024, ' KiB'))
 
 
 class TerminalStyle(NamedTuple):
@@ -24,25 +20,16 @@ class TerminalStyle(NamedTuple):
         return f'{self.success}PASS{self.reset}' if passed else f'{self.failure}FAIL{self.reset}'
 
 
-def format_scaled(value: Optional[int], units: Sequence[Tuple[int, str]], base_unit: str) -> str:
-    if value is None:
-        return '—'
-    for scale, unit in units:
-        if value >= 10 * scale:
-            return f'{value / scale:.0f}{unit}'
-    return f'{value:.0f}{base_unit}'
-
-
 def format_count(value: Optional[int]) -> str:
-    return format_scaled(value, COUNT_UNITS, '')
+    return '—' if value is None else f'{round(value / 1_000_000):,}M'
 
 
 def format_memory(value: Optional[int]) -> str:
-    return format_scaled(value, MEMORY_UNITS, ' B')
+    return '—' if value is None else f'{round(value / 1024):,} KiB'
 
 
 def format_runtime(seconds: Optional[float]) -> str:
-    return '—' if seconds is None else f'{seconds * 1000:.0f} ms'
+    return '—' if seconds is None else f'{round(seconds * 1000):,} ms'
 
 
 def format_ratio(ratio: float) -> str:
@@ -50,7 +37,11 @@ def format_ratio(ratio: float) -> str:
     return f'{rounded:g}×'
 
 
-FORMATTERS = {'Ticks': format_count, 'Runtime': format_runtime, 'Peak memory': format_memory}
+LIMIT_FORMATTERS = {
+    'Ticks': format_count,
+    'Runtime': lambda seconds: f'{seconds:g} s',
+    'Peak memory': lambda size: f'{size / 1024 ** 2:g} MiB',
+}
 
 
 def print_basic_tests(results: List[TestResult], style: TerminalStyle) -> None:
@@ -85,9 +76,7 @@ def print_comparisons(yours: TestResult) -> None:
 def print_checks(result: TestResult, style: TerminalStyle) -> None:
     checks = [('Correctness:', result.passed)]
     for check in result.performance_checks:
-        limit = (f'{check.limit:g} s' if check.label == 'Runtime'
-                 else FORMATTERS[check.label](check.limit))
-        checks.append((f'{check.label} (<{limit}):', check.passed))
+        checks.append((f'{check.label} (<{LIMIT_FORMATTERS[check.label](check.limit)}):', check.passed))
     width = max(len(label) for label, _ in checks)
     for label, passed in checks:
         print(f'{label:<{width}}  {style.status(passed)}')
@@ -134,8 +123,8 @@ def print_results(results: List[TestResult]) -> None:
     print(f'\nCorrectness: {sum(result.passed for result in results)}/{len(results)} passed')
     if performance:
         print(f'Performance: {sum(result.earns_credit for result in performance)}/{len(performance)} passed')
-    credits = sum(result.earns_credit for result in results)
+    checks = sum(result.earns_credit for result in results)
     if {result.test.number for result in results} == {test.number for test in TESTS}:
-        print(f'Score: {calculate_grade(results):.1f}% ({credits}/{len(TESTS)} credits)')
+        print(f'Score: {calculate_grade(results):.1f}% ({checks}/{len(TESTS)} checks)')
     else:
-        print(f'Credit: {credits}/{len(results)}')
+        print(f'Checks: {checks}/{len(results)}')

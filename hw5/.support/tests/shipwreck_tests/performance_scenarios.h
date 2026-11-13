@@ -54,11 +54,18 @@ namespace shipwreck_tests
   struct WreckSite
   {
     Location center;
-    DebrisStrength debris;
+    int coreDebrisPerPath;
+    int outerDebrisPerPath;
     int coreRadius = CORE_RADIUS;
     int outerRadius = OUTER_RADIUS;
     std::vector<int> approachPaths{-1, 0, 1};
   };
+
+  inline WreckSite makeSite(Location center, DebrisStrength debris)
+  {
+    return {center, static_cast<int>(CORE_RADIUS * debris.coreProbability),
+            static_cast<int>(OUTER_RADIUS * debris.outerProbability)};
+  }
 
   inline int clusterOffset(std::mt19937 &random, int radius)
   {
@@ -95,14 +102,14 @@ namespace shipwreck_tests
     std::vector<WreckSite> sites;
     if (targetCenter)
     {
-      sites.push_back({*targetCenter, settings.targetDebris});
+      sites.push_back(makeSite(*targetCenter, settings.targetDebris));
     }
     const auto &formerWrecks = settings.formerWreckDebris;
     for (std::size_t index = 0; index < formerWrecks.size(); ++index)
     {
       const bool isDecoy = targetCenter && index + 1 == formerWrecks.size();
       const Location center = isDecoy ? decoyCenter(*targetCenter, settings.robotCount, random) : randomSiteCenter(settings, random);
-      sites.push_back({center, formerWrecks[index]});
+      sites.push_back(makeSite(center, formerWrecks[index]));
     }
     for (auto &site : sites)
     {
@@ -155,10 +162,8 @@ namespace shipwreck_tests
 
   inline void addWreckDebris(Scenario &scenario, const WreckSite &site, std::mt19937 &random)
   {
-    const int coreSamples = static_cast<int>(CORE_RADIUS * site.debris.coreProbability);
-    const int outerSamples = static_cast<int>(OUTER_RADIUS * site.debris.outerProbability);
-    addClusterDebris(scenario, site.center, site.coreRadius, coreSamples, {-1, 0, 1}, random);
-    addClusterDebris(scenario, site.center, site.outerRadius, outerSamples, site.approachPaths, random);
+    addClusterDebris(scenario, site.center, site.coreRadius, site.coreDebrisPerPath, {-1, 0, 1}, random);
+    addClusterDebris(scenario, site.center, site.outerRadius, site.outerDebrisPerPath, site.approachPaths, random);
   }
 
   inline bool sameLocation(Location left, Location right)
@@ -195,8 +200,7 @@ namespace shipwreck_tests
                                  static_cast<std::size_t>(settings.pathLength * settings.backgroundProbability);
     for (const auto &site : sites)
     {
-      debrisCapacity += 3 * (static_cast<std::size_t>(CORE_RADIUS * site.debris.coreProbability) +
-                             static_cast<std::size_t>(OUTER_RADIUS * site.debris.outerProbability));
+      debrisCapacity += 3 * site.coreDebrisPerPath + site.approachPaths.size() * site.outerDebrisPerPath;
     }
     scenario.debris.reserve(debrisCapacity);
     if (targetCenter)

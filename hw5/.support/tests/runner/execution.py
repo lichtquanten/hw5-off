@@ -86,7 +86,7 @@ class CheckRunner:
         memory_error = ''
         try:
             memory = json.loads(self.reference_memory_path.read_text())
-        except OSError as error:
+        except (OSError, ValueError) as error:
             memory = {}
             memory_error = str(error)
         for result in targets:

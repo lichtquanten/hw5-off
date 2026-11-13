@@ -29,7 +29,7 @@ Search::Search(Mothership &mothership)
   {
     ends[robot] = std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);
     positions[robot] = mothership.getRobotPosition(robot);
-    if (hasRemainingPath(robot))
+    if (isWaiting(robot))
     {
       waiting.insert(rank(robot));
     }
@@ -68,23 +68,56 @@ int Search::measureSignal(int robot) const
   return count;
 }
 
-void Search::refreshWaitingSignal(int robot)
+bool Search::isWaiting(int robot) const
+{
+  return robot != active && hasRemainingPath(robot);
+}
+
+void Search::refreshSignal(int robot)
 {
   const int signal = measureSignal(robot);
   if (signal == signals[robot])
   {
     return;
   }
-  const bool isWaiting = hasRemainingPath(robot);
-  if (isWaiting)
+  const bool waitingRobot = isWaiting(robot);
+  if (waitingRobot)
   {
     waiting.erase(rank(robot));
   }
   signals[robot] = signal;
-  if (isWaiting)
+  if (waitingRobot)
   {
     waiting.insert(rank(robot));
   }
+}
+
+bool Search::shouldKeepDriving() const
+{
+  if (!hasRemainingPath(active))
+  {
+    return false;
+  }
+  if (waiting.empty())
+  {
+    return true;
+  }
+  const Rank &rival = *waiting.begin();
+  const bool stillUseful = signals[active] > 0 || drivenSinceSwitch < SWEEP_LENGTH;
+  return (stillUseful && rival.signal - signals[active] < SWITCH_MARGIN) || rank(active) < rival;
+}
+
+void Search::switchTo(int robot)
+{
+  const int previous = active;
+  waiting.erase(rank(robot));
+  active = robot;
+  if (previous >= 0 && isWaiting(previous))
+  {
+    waiting.insert(rank(previous));
+  }
+  mothership.switchToRobot(robot);
+  drivenSinceSwitch = 0;
 }
 
 SearchResult Search::findShipwreck()
@@ -93,10 +126,7 @@ SearchResult Search::findShipwreck()
   {
     return SearchResult{false, Location{}};
   }
-  int active = waiting.begin()->robot;
-  waiting.erase(waiting.begin());
-  mothership.switchToRobot(active);
-  int drivenSinceSwitch = 0;
+  switchTo(waiting.begin()->robot);
   while (true)
   {
     const DriveResult result = mothership.driveActiveRobot(
@@ -110,39 +140,18 @@ SearchResult Search::findShipwreck()
     if (result.reason == DriveStopReason::DebrisFound)
     {
       debris[active].push_back(positions[active]);
-      for (int neighbor : {leftOf(active), rightOf(active)})
-      {
-        if (neighbor != active)
-        {
-          refreshWaitingSignal(neighbor);
-        }
-      }
+      refreshSignal(leftOf(active));
+      refreshSignal(rightOf(active));
     }
-    signals[active] = measureSignal(active);
-
-    const bool hasPath = hasRemainingPath(active);
-    const bool stillUseful = hasPath && (signals[active] > 0 || drivenSinceSwitch < SWEEP_LENGTH);
-    const bool hasRival = !waiting.empty();
-    if (stillUseful && (!hasRival || waiting.begin()->signal - signals[active] < SWITCH_MARGIN))
+    refreshSignal(active);
+    if (shouldKeepDriving())
     {
       continue;
     }
-    if (hasPath && (!hasRival || rank(active) < *waiting.begin()))
-    {
-      continue;
-    }
-    if (!hasRival)
+    if (waiting.empty())
     {
       return SearchResult{false, Location{}};
     }
-    const int next = waiting.begin()->robot;
-    waiting.erase(waiting.begin());
-    if (hasPath)
-    {
-      waiting.insert(rank(active));
-    }
-    mothership.switchToRobot(next);
-    active = next;
-    drivenSinceSwitch = 0;
+    switchTo(waiting.begin()->robot);
   }
 }

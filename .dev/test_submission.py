@@ -22,13 +22,6 @@ def run(arguments, directory, **options):
                           universal_newlines=True, **options).stdout.strip()
 
 
-def assignment_data(sha):
-    return json.dumps({'assessments': {'info': [
-        {'name': 'Another Question', 'answer': {'correctAnswer': 'irrelevant'}},
-        {'name': 'Final SHA', 'answer': {'correctAnswer': sha}},
-    ]}})
-
-
 class SubmissionTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix='hw5-submission-test-')
@@ -55,19 +48,21 @@ class SubmissionTests(unittest.TestCase):
         self.git('add', '-f', 'build/tracked.cpp')
         self.git('commit', '--quiet', '-m', 'Submitted solution')
         self.sha = self.git('rev-parse', 'HEAD')
-        remote = self.root / 'remote.git'
-        run(['git', 'init', '--quiet', '--bare', str(remote)], self.root)
-        run(['git', 'symbolic-ref', 'HEAD', 'refs/heads/main'], remote)
-        self.git('remote', 'add', 'origin', str(remote))
+        self.remote = self.root / 'remote.git'
+        run(['git', 'init', '--quiet', '--bare', str(self.remote)], self.root)
+        run(['git', 'symbolic-ref', 'HEAD', 'refs/heads/main'], self.remote)
+        self.git('remote', 'add', 'origin', str(self.remote))
         self.git('push', '--quiet', '--set-upstream', 'origin', 'main')
+        self.submission = self.root / 'grading/hw5.submission'
+        shutil.copytree(str(self.project), str(self.submission))
 
     def git(self, *arguments):
         return run(['git', *arguments], self.project)
 
-    def prepare(self, sha, name='checkout'):
+    def prepare(self, name='checkout'):
         checkout = self.root / name
-        commit = prepare_submission(self.project, sha, checkout, SECURE / '.support')
-        return checkout, commit
+        prepare_submission(self.submission, checkout, SECURE / '.support')
+        return checkout
 
     def break_newer_code(self):
         (self.project / 'search.cpp').write_text('#error Newer commit must not be graded\n')
@@ -76,30 +71,35 @@ class SubmissionTests(unittest.TestCase):
         self.git('push', '--quiet')
         (self.project / 'search.cpp').write_text('#error Uncommitted code must not be graded\n')
 
-    def test_exact_commit_and_course_files_replace_student_infrastructure(self):
+    def test_saved_files_are_copied_with_course_grading_files(self):
         self.break_newer_code()
-        checkout, commit = self.prepare(self.sha[:10].upper())
-        self.assertEqual(commit, self.sha)
+        checkout = self.prepare()
         self.assertEqual((checkout / 'search.cpp').read_bytes(), self.original_source)
         self.assertFalse((checkout / 'build').exists())
+        self.assertFalse((checkout / '.git').exists())
         self.assertEqual((checkout / '.support/tests/runner/execution.py').read_bytes(),
                          (SECURE / '.support/tests/runner/execution.py').read_bytes())
         self.assertEqual((checkout / 'mothership.h').read_bytes(),
                          (WORKSPACE / 'hw5/mothership.h').read_bytes())
         self.assertIn('Uncommitted', (self.project / 'search.cpp').read_text())
+        (checkout / 'search.cpp').write_text('// Only change the temporary copy\n')
+        self.assertEqual((self.submission / 'search.cpp').read_bytes(), self.original_source)
+        self.assertIn('Do not use', (self.submission / 'mothership.h').read_text())
+        self.assertTrue((self.submission / 'build/tracked.cpp').is_file())
 
-    def test_bad_missing_and_unpushed_shas_never_use_the_workspace(self):
-        for sha in ('', 'main', '--help', self.sha + '; echo invalid'):
-            with self.subTest(sha=sha), self.assertRaises(SubmissionError):
-                self.prepare(sha)
-        (self.project / 'search.cpp').write_text('// Unpushed solution\n')
-        self.git('add', 'search.cpp')
-        self.git('commit', '--quiet', '-m', 'Unpushed commit')
-        with self.assertRaisesRegex(SubmissionError, 'git push'):
-            self.prepare(self.git('rev-parse', 'HEAD'))
-        self.git('remote', 'remove', 'origin')
-        with self.assertRaisesRegex(SubmissionError, 'origin'):
-            self.prepare(self.sha, 'missing-origin')
+    def test_missing_submission_does_not_use_working_repository(self):
+        shutil.rmtree(str(self.submission))
+        with self.assertRaisesRegex(SubmissionError, 'No saved submission'):
+            self.prepare()
+
+    def test_missing_required_files_are_submission_errors(self):
+        for name in ('search.cpp', 'search.h'):
+            path = self.submission / name
+            original = path.read_bytes()
+            path.unlink()
+            with self.subTest(name=name), self.assertRaisesRegex(SubmissionError, 'must contain'):
+                self.prepare()
+            path.write_bytes(original)
 
     def test_replacing_symlinks_does_not_modify_their_targets(self):
         outside = self.root / 'outside'
@@ -107,34 +107,22 @@ class SubmissionTests(unittest.TestCase):
         sentinel = outside / 'keep.txt'
         sentinel.write_text('keep')
         for name in ('.support', 'build'):
-            shutil.rmtree(str(self.project / name))
-            (self.project / name).symlink_to(outside, target_is_directory=True)
-        (self.project / 'mothership.h').unlink()
-        (self.project / 'mothership.h').symlink_to(sentinel)
-        self.git('add', '-A')
-        self.git('commit', '--quiet', '-m', 'Symlink infrastructure')
-        self.git('push', '--quiet')
-        checkout, _ = self.prepare(self.git('rev-parse', 'HEAD'))
+            shutil.rmtree(str(self.submission / name))
+            (self.submission / name).symlink_to(outside, target_is_directory=True)
+        (self.submission / 'mothership.h').unlink()
+        (self.submission / 'mothership.h').symlink_to(sentinel)
+        checkout = self.prepare()
         self.assertFalse((checkout / '.support').is_symlink())
         self.assertFalse((checkout / 'mothership.h').is_symlink())
         self.assertFalse((checkout / 'build').exists())
+        self.assertTrue((self.submission / 'mothership.h').is_symlink())
         self.assertEqual(sentinel.read_text(), 'keep')
 
-    def test_reads_only_the_submitted_sha_from_codio(self):
-        with patch.dict(os.environ, {'CODIO_AUTOGRADE_ENV': assignment_data(self.sha)}, clear=True):
-            self.assertEqual(grade.read_submitted_sha(), self.sha)
-        with patch.dict(os.environ, {'CODIO_FREE_TEXT_ANSWER': self.sha}, clear=True):
-            self.assertEqual(grade.read_submitted_sha(), self.sha)
-        with patch.dict(os.environ, {'CODIO_AUTOGRADE_ENV': assignment_data('')}, clear=True):
-            self.assertEqual(grade.read_submitted_sha(), '')
-        with patch.dict(os.environ, {}, clear=True), self.assertRaisesRegex(RuntimeError, 'Final SHA'):
-            grade.read_submitted_sha()
-
     def test_grading_infrastructure_failures_do_not_become_zero_scores(self):
-        with patch.object(grade, 'STUDENT_REPOSITORY', self.project), \
+        with patch.object(grade, 'SUBMISSION_DIRECTORY', self.submission), \
                 patch.object(grade, 'evaluate_solution', side_effect=RuntimeError('Broken course setup')) as evaluate:
             with self.assertRaisesRegex(RuntimeError, 'Broken course setup'):
-                grade.grade_submission(self.sha)
+                grade.grade_submission()
         checkout = evaluate.call_args[0][0]
         self.assertFalse(checkout.parent.exists())
 
@@ -150,8 +138,7 @@ class SubmissionTests(unittest.TestCase):
             '    Path(os.environ["GRADE_RECEIPT"]).write_text(json.dumps(dict(\n'
             '        api=api, score=score, feedback=feedback, format=format)))\n'
             '    return True\n'
-            'def send_grade_v2(*args): return record("assignment", *args)\n'
-            'def send_partial_v2(*args): return record("assessment", *args)\n')
+            'def send_grade_v2(*args): return record("assignment", *args)\n')
         receipt = self.root / 'receipt.json'
         env = {key: value for key, value in os.environ.items() if not key.startswith('CODIO_')}
         env.update(environment, PYTHONPATH=str(library.parent), GRADE_RECEIPT=str(receipt))
@@ -160,21 +147,33 @@ class SubmissionTests(unittest.TestCase):
         self.assertFalse(list(secure.rglob('__pycache__')))
         return json.loads(receipt.read_text()), output
 
-    def test_actual_assignment_command_grades_old_commit_with_course_tests(self):
+    def test_assignment_grades_saved_files_after_original_and_remote_are_deleted(self):
         self.break_newer_code()
-        receipt, output = self.run_command({'CODIO_AUTOGRADE_ENV': assignment_data(self.sha)})
+        shutil.rmtree(str(self.project))
+        shutil.rmtree(str(self.remote))
+        receipt, output = self.run_command({
+            'CODIO_FREE_TEXT_ANSWER': 'main', 'CODIO_AUTOGRADE_ENV': 'not JSON',
+        })
         self.assertEqual(receipt['api'], 'assignment')
         self.assertAlmostEqual(receipt['score'], 100 * 8 / 13)
-        self.assertIn('Graded commit: ' + self.sha, receipt['feedback'])
         self.assertIn('Correctness: 13/13 passed', receipt['feedback'])
         self.assertIn('Score: 61.5% (8/13 checks)', output)
+        self.assertEqual((self.submission / 'search.cpp').read_bytes(), self.original_source)
+        self.assertIn('Do not use', (self.submission / 'mothership.h').read_text())
+        self.assertTrue((self.submission / 'build/tracked.cpp').is_file())
 
-    def test_assessment_command_reports_invalid_submission_as_zero(self):
-        receipt, _ = self.run_command({'CODIO_FREE_TEXT_ANSWER': 'main',
-                                       'CODIO_PARTIAL_POINTS_V2_URL': 'unused-test-endpoint'})
-        self.assertEqual(receipt['api'], 'assessment')
+    def test_assignment_command_reports_missing_submission_as_zero(self):
+        shutil.rmtree(str(self.submission))
+        receipt, _ = self.run_command({})
+        self.assertEqual(receipt['api'], 'assignment')
         self.assertEqual(receipt['score'], 0.0)
-        self.assertIn('Submission error', receipt['feedback'])
+        self.assertIn('No saved submission', receipt['feedback'])
+
+    def test_assignment_command_reports_incomplete_submission_as_zero(self):
+        (self.submission / 'search.h').unlink()
+        receipt, _ = self.run_command({})
+        self.assertEqual(receipt['score'], 0.0)
+        self.assertIn('must contain search.cpp and search.h', receipt['feedback'])
 
 
 if __name__ == '__main__':

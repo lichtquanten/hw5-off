@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import io
+import shutil
 import sys
 import tempfile
 from contextlib import redirect_stdout
@@ -24,7 +25,37 @@ from runner.execution import CheckRunner
 from runner.output import print_results
 from runner.processes import BuildError, CheckError
 from runner.results import calculate_grade
-from submission import SubmissionError, prepare_submission
+
+
+class SubmissionError(Exception):
+    pass
+
+
+def install_course_support(checkout: Path, support: Path) -> None:
+    for name in (".support", "build", "mothership.h"):
+        path = checkout / name
+        if path.is_symlink() or path.is_file():
+            path.unlink()
+        elif path.exists():
+            shutil.rmtree(path)
+    shutil.copytree(str(support), str(checkout / ".support"))
+    shutil.copy2(str(support / "mothership.h"), str(checkout / "mothership.h"))
+
+
+def prepare_submission(submission: Path, project: Path, support: Path) -> None:
+    if not submission.is_dir():
+        raise SubmissionError(
+            "No saved submission found. Submit your commit SHA in Final SHA first."
+        )
+    if not all((submission / name).is_file() for name in ("search.cpp", "search.h")):
+        raise SubmissionError(
+            "The saved submission must contain search.cpp and search.h at its root."
+        )
+    shutil.copytree(
+        str(submission), str(project), symlinks=True,
+        ignore=shutil.ignore_patterns(".git", ".support", "build", "__pycache__"),
+    )
+    install_course_support(project, support)
 
 
 def evaluate_solution(project: Path) -> Tuple[float, str]:
@@ -77,7 +108,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.stdout = io.TextIOWrapper(
-        sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True
-    )
     raise SystemExit(main())

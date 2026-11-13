@@ -13,7 +13,7 @@ WORKSPACE = Path(__file__).resolve().parent.parent
 SECURE = WORKSPACE / '.guides/secure'
 sys.path.insert(0, str(SECURE))
 import grade
-from submission import SubmissionError, prepare_submission
+from grade import SubmissionError, prepare_submission
 
 
 def run(arguments, directory, **options):

@@ -85,7 +85,9 @@ def print_comparisons(yours: TestResult) -> None:
 def print_checks(result: TestResult, style: TerminalStyle) -> None:
     checks = [('Correctness:', result.passed)]
     for check in result.performance_checks:
-        checks.append((f'{check.label} (<{FORMATTERS[check.label](check.limit)}):', check.passed))
+        limit = (f'{check.limit:g} s' if check.label == 'Runtime'
+                 else FORMATTERS[check.label](check.limit))
+        checks.append((f'{check.label} (<{limit}):', check.passed))
     width = max(len(label) for label, _ in checks)
     for label, passed in checks:
         print(f'{label:<{width}}  {style.status(passed)}')

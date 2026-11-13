@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import sys
 import tempfile
@@ -13,7 +14,7 @@ sys.path.insert(0, str(WORKSPACE / ".guides/secure"))
 
 import grade
 from runner.catalog import REFERENCES, TESTS, resolve_test_selection
-from runner.execution import CheckRunner, memory_report
+from runner.execution import CheckRunner
 from runner.output import (
     format_count,
     format_memory,
@@ -239,15 +240,15 @@ class GradingTests(unittest.TestCase):
         self.assertEqual(score, calculate_grade(results))
         self.assertEqual(feedback, render(results))
 
-    def test_reference_memory_is_loaded_from_shipped_profiles(self):
+    def test_reference_memory_is_loaded_from_shipped_json(self):
         result = passing_result(CLUSTERED_DEBRIS)
         runner = CheckRunner()
         with tempfile.TemporaryDirectory() as directory:
-            runner.reference_profiles = Path(directory)
-            for strategy in REFERENCES:
-                memory_report(
-                    runner.reference_profiles, strategy, result.test
-                ).write_text("mem_heap_B=1234\nmem_heap_B=5678\n")
+            runner.reference_memory_path = Path(directory) / "memory.json"
+            runner.reference_memory_path.write_text(json.dumps({
+                strategy: {result.test.full_name: 5678 + index}
+                for index, strategy in enumerate(REFERENCES)
+            }))
             with (
                 patch.object(
                     runner,
@@ -261,14 +262,21 @@ class GradingTests(unittest.TestCase):
                 runner.run_references([result])
         self.assertEqual(
             [reference.peak_memory_bytes for reference in result.references],
-            [5678, 5678],
+            [5678 + index for index in range(len(REFERENCES))],
         )
 
-    def test_missing_reference_profile_does_not_change_student_credit(self):
+    def test_unavailable_reference_memory_does_not_change_student_credit(self):
+        for contents in (None, "{}", json.dumps({strategy: {} for strategy in REFERENCES})):
+            with self.subTest(contents=contents):
+                self.check_unavailable_reference_memory(contents)
+
+    def check_unavailable_reference_memory(self, contents):
         result = passing_result(CLUSTERED_DEBRIS)
         runner = CheckRunner()
         with tempfile.TemporaryDirectory() as directory:
-            runner.reference_profiles = Path(directory)
+            runner.reference_memory_path = Path(directory) / "memory.json"
+            if contents is not None:
+                runner.reference_memory_path.write_text(contents)
             with (
                 patch.object(
                     runner,
@@ -283,7 +291,7 @@ class GradingTests(unittest.TestCase):
         self.assertTrue(result.earns_credit)
         for reference in result.references:
             self.assertIsNone(reference.peak_memory_bytes)
-            self.assertIn("Reference memory profile unavailable", reference.failure)
+            self.assertIn("Reference memory measurement unavailable", reference.failure)
 
     def test_only_student_performance_cases_are_profiled_during_checks(self):
         basic = passing_result(BASIC_TEST)

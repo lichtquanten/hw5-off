@@ -15,4 +15,3 @@ struct Scenario
 };
 
 void validateRobotIndex(int robotIndex, int robotCount);
-void validateScenario(const Scenario &scenario);

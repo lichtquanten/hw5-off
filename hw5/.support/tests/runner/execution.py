@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import shutil
 from typing import List, Optional
 
@@ -40,7 +41,7 @@ class CheckRunner:
         self.build_directory = project / 'build/tests'
         self.log_path = self.build_directory / 'check.log'
         references = self.test_suite / 'references'
-        self.reference_profiles = references / 'massif'
+        self.reference_memory_path = references / 'memory.json'
         self.reference_binaries = {
             strategy: references / directory / 'bin/performance_tests'
             for strategy, directory in REFERENCES.items()
@@ -82,15 +83,20 @@ class CheckRunner:
         if not targets:
             return
         print('Running references...', flush=True)
+        memory_error = ''
+        try:
+            memory = json.loads(self.reference_memory_path.read_text())
+        except OSError as error:
+            memory = {}
+            memory_error = str(error)
         for result in targets:
             for strategy, executable in self.reference_binaries.items():
                 reference = self.run_case(result.test, strategy, [str(executable)])
                 if reference.passed:
-                    report = memory_report(self.reference_profiles, strategy, result.test)
                     try:
-                        reference.peak_memory_bytes = read_peak_memory(report)
-                    except (CheckError, OSError) as error:
-                        reference.failure = 'Reference memory profile unavailable: ' + str(error)
+                        reference.peak_memory_bytes = memory[strategy][result.test.full_name]
+                    except KeyError as error:
+                        reference.failure = 'Reference memory measurement unavailable: ' + (memory_error or str(error))
                 result.references.append(reference)
 
     def run_case(self, test: TestDefinition, strategy: str, command: List[str]) -> TestResult:

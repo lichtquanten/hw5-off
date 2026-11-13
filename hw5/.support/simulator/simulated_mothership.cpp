@@ -48,7 +48,6 @@ namespace
 SimulatedMothership::SimulatedMothership(const Scenario &scenario)
     : abysses(scenario.abysses)
 {
-  validateScenario(scenario);
   robots = createRobots(scenario);
 }
 

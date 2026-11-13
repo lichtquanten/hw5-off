@@ -10,11 +10,6 @@ SimulatedRobot::SimulatedRobot(int reachableEnd, std::vector<int> debrisSegments
       shipwreckSegment(shipwreckSegment)
 {
   std::sort(this->debrisSegments.begin(), this->debrisSegments.end());
-  if (std::adjacent_find(this->debrisSegments.begin(), this->debrisSegments.end()) !=
-      this->debrisSegments.end())
-  {
-    throw std::invalid_argument("Duplicate debris location.");
-  }
 }
 
 DriveResult SimulatedRobot::advance(int maxSegments)

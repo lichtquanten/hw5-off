@@ -2,13 +2,13 @@
 
 You must find a shipwreck on the ocean floor!
 
-
-
 A ship sank to the ocean floor a long time ago. You're on a mothership, with N underwater robots to use for the search.
 
 As the ship sank, it scattered debris along the seafloor. The debris can be used to aid the search.
 
 Your goal is to find the shipwreck, or to report that the shipwreck is not findable.
+
+![alt text](.guides/img/Shipwreck!.svg)
 
 # Search
 

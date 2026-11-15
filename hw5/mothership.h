@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cstddef>
+#include <functional>
 #include <vector>
 
 constexpr int TETHER_LENGTH = 10'000'000;
@@ -18,8 +20,7 @@ enum class DriveStopReason
 {
   DriveLimitReached,
   DebrisFound,
-  ShipwreckFound,
-  PathLimitReached
+  ShipwreckFound
 };
 
 struct DriveResult
@@ -32,6 +33,29 @@ struct Location
 {
   int robot;
   int segment;
+
+  bool operator<(const Location &other) const // Needed by AVL/Splay sets and map keys
+  {
+    if (robot != other.robot)
+    {
+      return robot < other.robot;
+    }
+    return segment < other.segment;
+  }
+
+  bool operator==(const Location &other) const // Needed by unordered sets and map keys
+  {
+    return robot == other.robot && segment == other.segment;
+  }
+};
+
+struct LocationHash // Needed by unordered sets and map keys, e.g. std::unordered_set<Location, LocationHash>
+{
+  std::size_t operator()(const Location &location) const
+  {
+    return std::hash<long long>()(
+        static_cast<long long>(location.robot) * (TETHER_LENGTH + 1) + location.segment);
+  }
 };
 
 struct SearchResult
@@ -46,7 +70,7 @@ public:
   virtual ~Mothership() = default;
 
   virtual int getRobotCount() const = 0;
-  virtual const std::vector<int> &getAbysses() const = 0;
+  virtual const std::vector<Location> &getAbysses() const = 0;
 
   virtual int getActiveRobot() const = 0;
   virtual int getRobotPosition(int robot) const = 0;

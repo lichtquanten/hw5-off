@@ -14,7 +14,7 @@ public:
   explicit SimulatedMothership(const Scenario &scenario);
 
   int getRobotCount() const override;
-  const std::vector<int> &getAbysses() const override;
+  const std::vector<Location> &getAbysses() const override;
   int getActiveRobot() const override;
   int getRobotPosition(int robotIndex) const override;
   long long getElapsedTicks() const override;
@@ -27,7 +27,7 @@ public:
   bool allPathsExplored() const;
 
 private:
-  std::vector<int> abysses;
+  std::vector<Location> abysses;
   std::vector<SimulatedRobot> robots;
   std::optional<Location> discoveredShipwreck;
   int activeRobotIndex = 0;

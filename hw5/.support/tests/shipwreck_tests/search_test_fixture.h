@@ -15,6 +15,7 @@ public:
   void checkSearch(const Scenario &scenario)
   {
     const bool reachable = scenario.shipwreck &&
+                           scenario.shipwreck->segment <= TETHER_LENGTH &&
                            scenario.shipwreck->segment < scenario.abysses[scenario.shipwreck->robot];
     ::testing::Message expected;
     if (reachable)

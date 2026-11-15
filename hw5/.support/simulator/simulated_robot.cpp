@@ -53,11 +53,6 @@ DriveResult SimulatedRobot::advance(int maxSegments)
     return {moved, DriveStopReason::DebrisFound};
   }
 
-  if (hasReachedEnd())
-  {
-    return {moved, DriveStopReason::PathLimitReached};
-  }
-
   return {moved, DriveStopReason::DriveLimitReached};
 }
 

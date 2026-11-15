@@ -15,10 +15,27 @@ Search::Search(Mothership &mothership)
 SearchResult Search::findShipwreck()
 {
   /* TOY APPROACH - Depth First Search - (CHANGE OR REPLACE) */
+  const std::vector<Location> &abysses = mothership.getAbysses();
   for (int robot = 0; robot < mothership.getRobotCount(); ++robot)
   {
-    const int lastSegment =
-        std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);
+    bool hasAbyss = false;
+    int abyssSegment = 0;
+    for (const Location &abyss : abysses)
+    {
+      if (abyss.robot == robot)
+      {
+        hasAbyss = true;
+        abyssSegment = abyss.segment;
+        break;
+      }
+    }
+
+    int lastSegment = TETHER_LENGTH;
+    if (hasAbyss)
+    {
+      lastSegment = std::min(TETHER_LENGTH, abyssSegment - 1);
+    }
+
     if (mothership.getRobotPosition(robot) >= lastSegment)
     {
       continue;

@@ -22,12 +22,15 @@ bool Search::Rank::operator<(const Rank &other) const
 }
 
 Search::Search(Mothership &mothership)
-    : mothership(mothership), robotCount(mothership.getRobotCount()), ends(robotCount),
+    : mothership(mothership), robotCount(mothership.getRobotCount()), ends(robotCount, TETHER_LENGTH),
       positions(robotCount), signals(robotCount), debris(robotCount)
 {
+  for (Location abyss : mothership.getAbysses())
+  {
+    ends[abyss.robot] = std::min(ends[abyss.robot], abyss.segment - 1);
+  }
   for (int robot = 0; robot < robotCount; ++robot)
   {
-    ends[robot] = std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);
     positions[robot] = mothership.getRobotPosition(robot);
     if (isWaiting(robot))
     {

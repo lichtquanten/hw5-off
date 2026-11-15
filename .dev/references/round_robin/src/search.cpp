@@ -4,13 +4,18 @@
 
 SearchResult Search::findShipwreck()
 {
+  std::vector<int> ends(mothership.getRobotCount(), TETHER_LENGTH);
+  for (Location abyss : mothership.getAbysses())
+  {
+    ends[abyss.robot] = std::min(ends[abyss.robot], abyss.segment - 1);
+  }
   bool workRemaining = true;
   while (workRemaining)
   {
     workRemaining = false;
     for (int robot = 0; robot < mothership.getRobotCount(); ++robot)
     {
-      const int end = std::min(TETHER_LENGTH, mothership.getAbysses()[robot] - 1);
+      const int end = ends[robot];
       if (mothership.getRobotPosition(robot) >= end)
       {
         continue;

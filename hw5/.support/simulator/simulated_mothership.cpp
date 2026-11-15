@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <random>
 #include <utility>
 
 namespace
@@ -38,7 +39,8 @@ namespace
       {
         shipwreckSegment = scenario.shipwreck->segment;
       }
-      robots.emplace_back(scenario.abysses[robotIndex] - 1, std::move(debrisByRobot[robotIndex]), shipwreckSegment);
+      const int reachableEnd = std::min(TETHER_LENGTH, scenario.abysses[robotIndex] - 1);
+      robots.emplace_back(reachableEnd, std::move(debrisByRobot[robotIndex]), shipwreckSegment);
     }
 
     return robots;
@@ -46,9 +48,15 @@ namespace
 }
 
 SimulatedMothership::SimulatedMothership(const Scenario &scenario)
-    : abysses(scenario.abysses)
 {
   robots = createRobots(scenario);
+  abysses.reserve(robots.size());
+  for (int robot = 0; robot < getRobotCount(); ++robot)
+  {
+    abysses.push_back(Location{robot, scenario.abysses[robot]});
+  }
+  std::mt19937 random(0xAB155);
+  std::shuffle(abysses.begin(), abysses.end(), random);
 }
 
 int SimulatedMothership::getRobotCount() const
@@ -56,7 +64,7 @@ int SimulatedMothership::getRobotCount() const
   return static_cast<int>(robots.size());
 }
 
-const std::vector<int> &SimulatedMothership::getAbysses() const
+const std::vector<Location> &SimulatedMothership::getAbysses() const
 {
   return abysses;
 }

@@ -17,6 +17,7 @@ def build_reference(directory: str, build: Path) -> None:
     commands = (
         ['cmake', '-H' + str(TEST_SUITE), '-B' + str(build), '-DSOLUTION_DIR=' + str(solution)],
         ['cmake', '--build', str(build)],
+        [str(build / 'simulator_tests')],
         [str(build / 'basic_tests')],
     )
     for command in commands:

@@ -30,6 +30,9 @@ class SubmissionTests(unittest.TestCase):
         self.project = self.root / 'hw5'
         shutil.copytree(str(WORKSPACE / 'hw5'), str(self.project),
                         ignore=shutil.ignore_patterns('.support', 'build', '__pycache__', '.git'))
+        for name in ('search.cpp', 'search.h'):
+            shutil.copy2(str(WORKSPACE / '.dev/references/instructor/src' / name),
+                         str(self.project / name))
         self.original_source = (self.project / 'search.cpp').read_bytes()
         (self.project / 'Makefile').write_text('$(error Do not run the submitted Makefile)\n')
         (self.project / 'mothership.h').write_text('#error Do not use the submitted API header\n')
@@ -155,9 +158,9 @@ class SubmissionTests(unittest.TestCase):
             'CODIO_FREE_TEXT_ANSWER': 'main', 'CODIO_AUTOGRADE_ENV': 'not JSON',
         })
         self.assertEqual(receipt['api'], 'assignment')
-        self.assertAlmostEqual(receipt['score'], 100 * 8 / 13)
+        self.assertAlmostEqual(receipt['score'], 100)
         self.assertIn('Correctness: 13/13 passed', receipt['feedback'])
-        self.assertIn('Score: 61.5% (8/13 checks)', output)
+        self.assertIn('Score: 100.0% (13/13 checks)', output)
         self.assertEqual((self.submission / 'search.cpp').read_bytes(), self.original_source)
         self.assertIn('Do not use', (self.submission / 'mothership.h').read_text())
         self.assertTrue((self.submission / 'build/tracked.cpp').is_file())

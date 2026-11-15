@@ -40,3 +40,7 @@ foreach(name basic_tests performance_tests)
     add_executable(${name} "shipwreck_tests/${name}.cpp")
     target_link_libraries(${name} PRIVATE simulator solution gtest_main)
 endforeach()
+
+add_executable(simulator_tests "shipwreck_tests/simulator_tests.cpp")
+target_link_libraries(simulator_tests PRIVATE simulator gtest_main)
+target_include_directories(simulator_tests PRIVATE "${HW_DIR}")

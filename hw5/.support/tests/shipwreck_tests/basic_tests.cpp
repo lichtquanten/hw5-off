@@ -68,13 +68,19 @@ TEST_F(Shipwreck, BeyondAbyss)
 
 TEST_F(Shipwreck, TetherBoundary)
 {
-  Scenario scenario = blockedScenario();
-  scenario.abysses[DEFAULT_ROBOT_COUNT - 1] = TETHER_LENGTH + 1;
-  scenario.debris = {{DEFAULT_ROBOT_COUNT - 1, TETHER_LENGTH - 1}};
-  scenario.shipwreck = Location{DEFAULT_ROBOT_COUNT - 1, TETHER_LENGTH};
-  checkSearch(scenario);
-  scenario.shipwreck.reset();
-  checkSearch(scenario);
+  for (int abyss : {TETHER_LENGTH + 1, TETHER_LENGTH + 500})
+  {
+    SCOPED_TRACE(abyss);
+    Scenario scenario = blockedScenario();
+    scenario.abysses[DEFAULT_ROBOT_COUNT - 1] = abyss;
+    scenario.debris = {{DEFAULT_ROBOT_COUNT - 1, TETHER_LENGTH - 1}};
+    scenario.shipwreck = Location{DEFAULT_ROBOT_COUNT - 1, TETHER_LENGTH};
+    checkSearch(scenario);
+    scenario.shipwreck.reset();
+    checkSearch(scenario);
+    scenario.shipwreck = Location{DEFAULT_ROBOT_COUNT - 1, TETHER_LENGTH + 1};
+    checkSearch(scenario);
+  }
 }
 
 TEST_F(Shipwreck, SeededScenarios)

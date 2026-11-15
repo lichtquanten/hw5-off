@@ -34,7 +34,7 @@ struct Location
   int robot;
   int segment;
 
-  bool operator<(const Location &other) const // Needed by AVL/Splay sets and map keys
+  bool operator<(const Location &other) const
   {
     if (robot != other.robot)
     {
@@ -43,13 +43,13 @@ struct Location
     return segment < other.segment;
   }
 
-  bool operator==(const Location &other) const // Needed by unordered sets and map keys
+  bool operator==(const Location &other) const
   {
     return robot == other.robot && segment == other.segment;
   }
 };
 
-struct LocationHash // Needed by unordered sets and map keys, e.g. std::unordered_set<Location, LocationHash>
+struct LocationHash
 {
   std::size_t operator()(const Location &location) const
   {
@@ -61,7 +61,7 @@ struct LocationHash // Needed by unordered sets and map keys, e.g. std::unordere
 struct SearchResult
 {
   bool isFound;
-  Location location; // Only meaningful when isFound is true.
+  Location location;
 };
 
 class Mothership

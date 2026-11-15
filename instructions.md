@@ -35,7 +35,7 @@ Typically, N=100, i.e. there will be 100 robots.
 
 ## Abysses
 
-Robots may encounter abysses. Abysses are deep openings in the ground. Driving into an abyss causes failure. You are given a list of positions for the abysses at the start.
+Robots may encounter abysses. Abysses are deep openings in the ground. Driving into an abyss causes failure. You are given an unordered list of positions for the abysses at the start.
 
 You can request a drive of fewer than 100 segments, such as to avoid hitting an abyss.
 
@@ -112,7 +112,7 @@ Look at `hw5/examples/using_data_structures.cpp`. You will find examples of how 
 ## Starter Code
 
 - `hw5/search.{h,cpp}`: Provides the `Search` class, which performs the search in `findShipwreck()` and uses `Mothership` to control the robots.
-- `hw5/mothership.h`: Provides the `Mothership` class to switch robots, drive them, and report what they find. Also provides robot and abyss positions, and constants for robot count, tether length, drive limit, switching cost, and signal range. [DO NOT EDIT]
+- `hw5/mothership.h`: Provides the `Mothership` class to switch robots, drive them, and report what they find. Provides robot count, robot and abyss positions, and constants for tether length, drive limit, switching cost, and signal range. [DO NOT EDIT]
 - `hw5/seafloor_survey.{h,cpp}`: Provides the `SeafloorSurvey` class for storing debris discoveries and computing signal strength. [OPTIONAL]
 
 ## Editing Code
